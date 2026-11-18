@@ -28,6 +28,7 @@
     const r = A.route();
     $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + r || (r.startsWith('unit-') && a.getAttribute('href') === '#camino')));
     const main = $('#main');
+    if (!C.UNITS.length) { const miss = (G.CAMINO_MISSING || []); main.innerHTML = `<section class="band"><h1>The course files didn't load</h1><p class="lead">Camino started, but found no lessons. ${miss.length ? 'These files are missing or could not be loaded:' : 'The <code>data</code> folder is probably missing.'}</p>${miss.length ? `<ul>${miss.map(f => `<li><code>${esc(f)}</code></li>`).join('')}</ul>` : ''}<p>Make sure the <code>data</code> folder (with all its files) sits next to <code>index.html</code>, then reload. On GitHub, drag the whole <code>data</code> folder from your file manager onto the upload page; the "choose your files" button can't select folders.</p></section>`; return; }
     try {
       main.innerHTML = r.startsWith('unit-') ? viewUnit(r.slice(5)) : views()[r]();
       (binders[r.startsWith('unit-') ? 'unit' : r] || (() => { }))(r.slice(5));
@@ -499,9 +500,9 @@ create policy "own row only" on public.camino_state
       <div class="panel"><h2>Saving and sync</h2><p><b>${esc(C.syncLabel())}</b>. Progress is always saved in this browser after every answer.</p>
         ${C.onClaude ? `<p>On claude.ai: ${C.sync.status === 'on' ? 'your progress syncs privately across devices where you open this page signed in.' : 'sync starts when you are signed in.'}</p>` : ''}
         <h3>Free cross-device sync with Supabase (optional)</h3>
-        <p class="muted">Works anywhere, including GitHub Pages. Create a free project at supabase.com, run the SQL below once in its SQL editor, then paste the project URL and the anon (public) key here and create an account. See the README for step-by-step instructions.</p>
+        <p class="muted">Works anywhere, including GitHub Pages. Create a free project at supabase.com, run the SQL below once in its SQL editor, then paste the project URL and the publishable key (sb_publishable_…, never the secret key) here and create an account. See the README for step-by-step instructions.</p>
         <details><summary>SQL to run once</summary><pre class="code">${esc(SQL)}</pre><button class="btn small" id="sqlc">Copy SQL</button></details>
-        <div class="row wrap"><input id="sbu" placeholder="https://xxxx.supabase.co" value="${esc(sb.url || '')}" style="flex:1;min-width:14em" aria-label="Project URL"><input id="sbk" placeholder="anon public key" value="${esc(sb.key || '')}" style="flex:1;min-width:14em" aria-label="Anon key"></div>
+        <div class="row wrap"><input id="sbu" placeholder="https://xxxx.supabase.co" value="${esc(sb.url || '')}" style="flex:1;min-width:14em" aria-label="Project URL"><input id="sbk" placeholder="publishable key (sb_publishable_…)" value="${esc(sb.key || '')}" style="flex:1;min-width:14em" aria-label="Publishable key"></div>
         ${cl.signedIn() ? `<p>Signed in as <b>${esc(sb.email || '')}</b> · ${esc(cl.status === 'on' ? 'synced ' + (cl.lastSync ? new Date(cl.lastSync).toLocaleTimeString('en-GB') : '') : cl.status)}${cl.err ? ' · ' + esc(cl.err) : ''}</p><div class="row wrap"><button class="btn" id="sbnow">Sync now</button><button class="btn ghost" id="sbout">Sign out</button></div>`
         : `<div class="row wrap"><input id="sbe" type="email" placeholder="email" autocomplete="username" aria-label="Email"><input id="sbp" type="password" placeholder="password (8+ characters)" autocomplete="current-password" aria-label="Password"><button class="btn primary" id="sbin">Sign in</button><button class="btn" id="sbup">Create account</button></div>`}
         <div id="sbout2"></div>
