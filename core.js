@@ -74,6 +74,12 @@
     u.dids = u.drills.map(d => addItem(C.did(d[0]), 'd', d, u));
   });
   C.DECKS.forEach(d => { d.vids = d.vocab.map(v => addItem(C.vid(v[0]), 'v', v, d)); });
+  C.PRACTICE = (CM.practice || []).map((b, i) => {
+    b.n = i; b.title = b.tag;
+    b.rows = String(b.items || '').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#')).map(l => l.split(' | ').map(f => f.trim()));
+    b.ids = b.rows.map(r => addItem('p:' + hash(b.kind + '|' + r[0] + '|' + r[1]), 'p', r, b));
+    return b;
+  });
   C.cardItem = id => C.ITEMS[id] || null;
   C.MOCKS = ((CM.mocks) || []).slice().sort((a, b) => C.lvIdx(a.level) - C.lvIdx(b.level) || String(a.id).localeCompare(b.id));
   C.MOCK = {}; C.MOCKS.forEach(m => C.MOCK[m.id] = m);
@@ -93,7 +99,7 @@
 
   // ---------- state ----------
   const blankSettings = () => ({ goal: 45, rate: 0.95, voice: '', tts: 'auto', autoplay: true, strictAccents: false, reviewCap: 150, batch: 10, newPerDay: 30, freeRoam: false, ai: 'auto', aiProv: 'anthropic', aiModel: '' });
-  const blank = () => ({ v: 2, updated: 0, created: Date.now(), settings: blankSettings(), units: {}, cards: {}, days: {}, input: [], writing: {}, badges: {}, tutorChats: 0, lastBackup: 0, exams: [], reports: [] });
+  const blank = () => ({ v: 2, updated: 0, created: Date.now(), settings: blankSettings(), units: {}, cards: {}, days: {}, input: [], writing: {}, badges: {}, tutorChats: 0, lastBackup: 0, exams: [], reports: [], tags: {}, speedBest: 0 });
   C.blank = blank;
   C.S = blank();
   function load() {
@@ -179,6 +185,12 @@
   C.isDue = (c, now = Date.now()) => c && c.due <= now;
   C.dueCards = () => { const now = Date.now(); return Object.keys(C.S.cards).filter(k => C.ITEMS[k] && C.S.cards[k].due <= now).sort((a, b) => C.S.cards[a].due - C.S.cards[b].due); };
   C.has = id => !!C.S.cards[id];
+  // mistake notebook: wrong/total per grammar point or word topic; recent answers weigh more
+  C.noteTag = (tag, ok) => {
+    if (!tag) return; const T = (C.S.tags = C.S.tags || {}); const t = T[tag] || (T[tag] = { n: 0, w: 0, r: 0 });
+    t.n++; if (!ok) t.w++; t.r = Math.round(((t.r || 0) * 0.8 + (ok ? 0 : 1)) * 1000) / 1000; t.last = Date.now();
+  };
+  C.weakTags = (min = 3) => Object.entries(C.S.tags || {}).filter(([, t]) => t.n >= min && t.w > 0).map(([k, t]) => ({ tag: k, n: t.n, w: t.w, rate: (t.w + 1) / (t.n + 2), recent: t.r || 0, last: t.last })).sort((a, b) => (b.rate + b.recent * 0.5) - (a.rate + a.recent * 0.5));
   C.newToday = () => C.dayRec().v || 0;
 
   // ---------- unit and deck progress ----------
@@ -305,9 +317,11 @@
     S.lastBackup = Math.max(S.lastBackup || 0, m.lastBackup || 0);
     if (m.created) S.created = Math.min(S.created || Date.now(), m.created);
     if (m.exams) { S.exams = S.exams || []; const ids = new Set(S.exams.map(e => e.id)); m.exams.forEach(e => { if (!ids.has(e.id)) S.exams.push(e); }); S.exams.sort((a, b) => b.ts - a.ts); }
+    if (m.tags) { S.tags = S.tags || {}; for (const k in m.tags) { const r = m.tags[k], l = S.tags[k]; if (!l || (r.last || 0) > (l.last || 0)) S.tags[k] = r; } }
+    S.speedBest = Math.max(S.speedBest || 0, m.speedBest || 0);
     if (m.reports) { S.reports = S.reports || []; const ks = new Set(S.reports.map(r => r.ts)); m.reports.forEach(r => { if (!ks.has(r.ts)) S.reports.push(r); }); }
   };
-  C.metaOf = S => ({ units: S.units, days: S.days, input: S.input.slice(0, 1500), badges: S.badges, writing: S.writing, settings: S.settings, updated: S.updated, created: S.created, tutorChats: S.tutorChats, lastBackup: S.lastBackup, exams: (S.exams || []).slice(0, 300), reports: (S.reports || []).slice(0, 200) });
+  C.metaOf = S => ({ units: S.units, days: S.days, input: S.input.slice(0, 1500), badges: S.badges, writing: S.writing, settings: S.settings, updated: S.updated, created: S.created, tutorChats: S.tutorChats, lastBackup: S.lastBackup, exams: (S.exams || []).slice(0, 300), reports: (S.reports || []).slice(0, 200), tags: S.tags || {}, speedBest: S.speedBest || 0 });
 
   // ---------- sync route 1: claude.ai artifact storage (private per person) ----------
   const SHARDS = 16;

@@ -82,6 +82,7 @@
       <a class="plan-card" href="#decks"><span class="pc-k">3 · New words</span><span class="pc-big">${newN}<small>/${newT}</small></span><span class="pc-s">${dk ? 'Suggested deck: <b>' + esc(dk.title) + '</b> · ' + C.learnedOf(dk) + '/' + dk.vids.length : 'All decks learned'}</span></a>
       <a class="plan-card" href="#library"><span class="pc-k">4 · Input</span><span class="pc-big">${Math.round(rec.i || 0)}<small>/${inputT} min</small></span><span class="pc-s">${esc((u.res[0] || {}).t || 'Listen to a podcast')}</span></a>
     </div>
+    ${C.weakTags().length ? `<p class="note">Weak points this week: <b>${C.weakTags().slice(0, 3).map(t => esc(t.tag)).join('</b>, <b>')}</b>. <a href="#gym">Practise them for 10 minutes</a>.</p>` : ''}
     <div class="row wrap"><a class="btn primary" href="#unit-${u.id}">Continue stage ${u.n + 1}</a>${due ? '<a class="btn" href="#review">Start reviews</a>' : ''}<a class="btn" href="#gym">Extra practice</a>${C.ai.available() ? '<a class="btn" href="#tutor">Talk with the tutor</a>' : ''}</div></section>
     <section class="band"><h2>This week</h2>${weekStrip()}<div class="kpis">
       <div><b>${C.fmtN(st.known)}</b><span>words known long-term</span></div><div><b>${C.fmtN(st.words)}</b><span>words started of ${C.fmtN(C.VOCAB_TOTAL)}</span></div><div><b>${C.fmtMin(st.totalMin)}</b><span>total study</span></div><div><b>${st.unitsDone}/${C.UNITS.length}</b><span>stages complete</span></div><div><b>${Math.round(st.acc * 100)}%</b><span>review accuracy</span></div></div></section>`;
@@ -278,7 +279,7 @@
     const soon = Object.values(S().cards).filter(c => c.due > Date.now() && c.due < Date.now() + 864e5).length;
     const byType = t => due.filter(k => k[0] === t).length;
     return `<section class="band"><h1>Repaso</h1><p class="lead">${due.length ? `<b>${due.length}</b> cards are due. Spaced repetition shows each card just before you'd forget it.` : n ? 'All caught up. ¡Enhorabuena!' : 'Your review deck fills up as you learn words in each stage and deck.'}</p>
-      ${due.length ? `<div class="kpis"><div><b>${byType('v')}</b><span>words</span></div><div><b>${byType('s')}</b><span>sentences</span></div><div><b>${byType('d')}</b><span>grammar</span></div><div><b>${soon}</b><span>due in next 24 h</span></div></div>
+      ${due.length ? `<div class="kpis"><div><b>${byType('v')}</b><span>words</span></div><div><b>${byType('s')}</b><span>sentences</span></div><div><b>${byType('d') + byType('p')}</b><span>grammar</span></div><div><b>${soon}</b><span>due in next 24 h</span></div></div>
       <div class="row wrap"><button class="btn primary" id="rstart">Review ${Math.min(due.length, S().settings.reviewCap)} cards</button>${due.length > 40 ? '<button class="btn" id="rshort">Quick 20</button>' : ''}</div>` : n ? `<div class="row wrap"><button class="btn" id="rahead">Practise 20 weakest cards</button><a class="btn" href="#gym">More practice</a></div>` : `<div class="row"><a class="btn primary" href="#unit-${C.currentUnit().id}">Go to your current stage</a></div>`}
       </section>${forecast()}`;
   }
@@ -315,10 +316,23 @@
     const p = EX.pools();
     return `<section class="band"><h1>Entreno</h1><p class="lead">Extra practice on everything you have reached so far: ${C.fmtN(p.learnedV.length)} words, ${p.drills.length} grammar drills, ${p.sents.length} key sentences and ${p.readings.length} texts. Every session is freshly mixed and updates your reviews.</p>
       <div class="gym">${WORKOUTS.map(([k, t, d, n]) => { const c = n(p); return `<button class="plan-card gymc" data-w="${k}" ${c ? '' : 'disabled'}><span class="pc-k">${esc(t)}</span><span class="pc-s">${esc(d)}</span>${c ? '' : '<span class="pc-s"><i>Learn some words first</i></span>'}</button>`; }).join('')}
-      <a class="plan-card gymc" href="#verbs"><span class="pc-k">Verb drills</span><span class="pc-s">Conjugation in every tense, vosotros included</span></a></div></section>`;
+      <a class="plan-card gymc" href="#verbs"><span class="pc-k">Verb drills</span><span class="pc-s">Conjugation in every tense, vosotros included</span></a></div></section>
+    <section class="band"><h2>Grammar and skills</h2><p class="muted">New exercise types, up to your level (${C.LEVELS[PRAC.maxLv()].id}).</p><div class="gym">${PRAC.WORKOUTS.filter(w => w[0] !== 'weak').map(([k, t, d, n]) => { const c = n(PRAC.maxLv()); return `<button class="plan-card gymc" data-pw="${k}" ${c ? '' : 'disabled'}><span class="pc-k">${esc(t)}</span><span class="pc-s">${esc(d)}</span>${c && k !== 'speed' ? `<span class="pc-s"><b>${C.fmtN(c)}</b> ${k === 'tenses' ? 'texts' : k === 'dicto' ? 'paragraphs' : 'items'}</span>` : k === 'speed' && C.S.speedBest ? `<span class="pc-s">Best: <b>${C.S.speedBest}</b></span>` : ''}</button>`; }).join('')}</div></section>
+    ${notebook()}`;
+  }
+  function notebook() {
+    const w = C.weakTags().slice(0, 8);
+    return `<section class="band"><h2>Mistake notebook</h2>${w.length ? `<p>The grammar points and word topics you get wrong most often, from every answer you give. Practising them moves them down the list.</p>
+      <div class="nb">${w.map(t => `<div class="nbrow"><span class="nbt">${esc(t.tag)}</span><div class="lvbar"><i style="width:${Math.round(100 * t.w / t.n)}%"></i></div><small>${t.w} of ${t.n} wrong</small><button class="btn small ghost" data-wt="${esc(t.tag)}">Practise</button></div>`).join('')}</div>
+      <div class="row"><button class="btn primary" data-pw="weak">10-minute weak-point session</button></div>` : '<p class="muted">Answer some questions first: every mistake is filed under its grammar point or word topic, and your weakest ones appear here.</p>'}</section>`;
   }
   binders.exams = () => G.EXAMS.bind();
-  binders.gym = () => $$('[data-w]').forEach(b => b.onclick = () => {
+  binders.gym = () => {
+    $$('[data-pw]').forEach(b => b.onclick = () => { const k = b.dataset.pw, w = PRAC.WORKOUTS.find(x => x[0] === k); const items = PRAC.workout(k); EX.run({ title: w[1], items, requeue: k !== 'speed' && k !== 'tenses' && k !== 'dicto', graded: k !== 'speed', onDone: () => A.render() }); });
+    $$('[data-wt]').forEach(b => b.onclick = () => EX.run({ title: b.dataset.wt, items: PRAC.tagItems(b.dataset.wt, 12), onDone: () => A.render() }));
+    gymBind();
+  };
+  const gymBind = () => $$('[data-w]').forEach(b => b.onclick = () => {
     const k = b.dataset.w, w = WORKOUTS.find(x => x[0] === k);
     EX.run({ title: w[1], items: EX.workout(k), graded: k !== 'speak', requeue: k !== 'speak' && k !== 'reading', onDone: () => A.render() });
   });

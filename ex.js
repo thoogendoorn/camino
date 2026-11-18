@@ -7,7 +7,12 @@
   const ACCENTS = ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ', '¿', '¡'];
   const item = id => C.ITEMS[id];
   let EXAM = false;           // exam mode: no feedback, no colouring, straight to the next item
-  E.renderers = {};          // extra exercise types (exams.js)
+  E.renderers = {};          // extra exercise types (exams.js, practice.js)
+  // grammar point / topic of a card, for the mistake notebook
+  E.tagOf = id => { const x = id && C.ITEMS[id]; if (!x) return null; const s = x.src;
+    if (x.t === 'p') return s.tag;
+    if (x.t === 'v') return 'Vocabulario · ' + s.title;
+    return s.grammar ? s.grammar.t : s.title; };
   E.isExam = () => EXAM;
 
   // ---------- builders (all take card ids) ----------
@@ -69,7 +74,7 @@
     const t = Verbs.TENSES.find(t => t.id === tense);
     const meaning = (Verbs.VERBS.find(v => v[0] === verb) || [])[1];
     const pl = tense === 'imp' || tense === 'impneg' ? ['—', 'tú', 'usted', 'nosotros', 'vosotros', 'ustedes'][p] : PERS[p];
-    return { type: 'type', prompt: verb + (meaning ? ' · ' + meaning : ''), sub: t.es + ' · ' + pl, answers: [forms[p]], show: forms[p], conj: true };
+    return { type: 'type', prompt: verb + (meaning ? ' · ' + meaning : ''), sub: t.es + ' · ' + pl, answers: [forms[p]], show: forms[p], conj: true, tag: 'Conjugación · ' + t.es };
   };
   const conjItems = (u, n) => u.conj ? pick(u.conj.v.flatMap(v => [0, 1, 2, 3, 4, 5].map(p => [v, p])).filter(([v, p]) => { try { return Verbs.conj(v, u.conj.t)[p]; } catch (e) { return false; } }), n).map(([v, p]) => E.conjEx(v, u.conj.t, p)) : [];
   // pick the right exercise for a card by memory strength (desirable difficulty)
@@ -82,6 +87,7 @@
       return E.vocabEx(id, kind);
     }
     if (x.t === 'd') return E.drillEx(id);
+    if (x.t === 'p') return E.pEx ? E.pEx(id) : null;
     return E.sentEx(id, s < 3 ? (r < 0.6 ? 'scramble' : 'listen') : (r < 0.5 ? 'translate' : 'listen'));
   };
 
@@ -114,6 +120,7 @@
           const pts = res.pts != null ? res.pts : (res.ok ? 1 : 0), max = res.max != null ? res.max : 1;
           st.results.push({ ex, ...res, pts, max });
           if (graded && ex.card) C.grade(ex.card, res.ok ? (res.close ? 2 : (res.easy ? 4 : 3)) : 1);
+          if (!exam && !ex.retry) C.noteTag(ex.tag || E.tagOf(ex.card), !!res.ok);
           if (!res.ok && requeue && !ex.retry && ex.type !== 'match' && !E.renderers[ex.type]) { const copy = Object.assign({}, ex, { retry: true }); st.items.splice(Math.min(st.items.length, st.i + 4), 0, copy); }
         }
         st.i++; next();
@@ -166,7 +173,8 @@
     const fb = $('.fb', root);
     const correct = ex.show || ex.answer || ex.es || '';
     fb.className = 'fb ' + (res.ok ? (res.close ? 'close' : 'good') : 'bad');
-    const extra = ex.reveal ? `<div><span class="es">${esc(ex.reveal)}</span> · ${esc(ex.en || '')}</div>` : ex.hint2 ? `<div class="en">${esc(ex.say || '')} · <i>${esc(ex.hint2)}</i></div>` : '';
+    const whyTxt = ex.explain ? `<div class="why">${esc(ex.explain)}</div>` : '';
+    const extra = whyTxt + (ex.reveal ? `<div><span class="es">${esc(ex.reveal)}</span> · ${esc(ex.en || '')}</div>` : ex.hint2 ? `<div class="en">${esc(ex.say || '')} · <i>${esc(ex.hint2)}</i></div>` : '');
     fb.innerHTML = res.ok
       ? `<b>${res.close ? 'Almost right' : 'Correct'}</b>${res.note ? `<div>${esc(res.note)}</div>` : ''}${ex.en && ex.listen && !ex.reveal ? `<div class="en">${esc(ex.en)}</div>` : ''}${extra}`
       : `<b>Not quite</b><div>Answer: <span class="es">${esc(correct)}</span></div>${input ? `<div class="you">You wrote: ${esc(input)}</div>` : ''}${ex.en && !ex.prompt && !ex.reveal && !ex.hint2 ? `<div class="en">${esc(ex.en)}</div>` : ''}${extra}`;
@@ -213,11 +221,11 @@
       return;
     }
     if (t === 'mc') {
-      root.innerHTML = `<div class="ex"><div class="sub">${esc(ex.sub)}</div>${ex.listen ? `<div class="listen-big">${speakBtn(ex.listen)}</div>` : `<div class="prompt ${ex.say ? 'es' : ''}">${esc(ex.prompt)}</div>${ex.say && !ex.gender ? `<div class="say-row">${speakBtn(ex.say)}</div>` : ''}`}
+      root.innerHTML = `<div class="ex"><div class="sub">${esc(ex.sub)}</div>${ex.listen ? `<div class="listen-big">${speakBtn(ex.listen)}</div>` : `<div class="prompt ${ex.say || ex.promptEs ? 'es' : ''} ${ex.promptEs && ex.prompt.length > 28 ? 'cloze' : ''}">${esc(ex.prompt)}</div>${ex.say && !ex.gender && !ex.hideSay ? `<div class="say-row">${speakBtn(ex.say)}</div>` : ''}`}
         <div class="opts ${ex.gender ? 'two' : ''}">${ex.options.map((o, i) => `<button class="opt" data-i="${i}"><span class="k">${i + 1}</span>${esc(o)}</button>`).join('')}</div><div class="fb" aria-live="polite"></div><div class="foot"></div></div>`;
       bindSay(root);
       if (ex.listen && C.S.settings.autoplay !== false) setTimeout(() => C.speak(ex.listen), 200);
-      else if (ex.say && !ex.gender && C.S.settings.autoplay) C.speak(ex.say);
+      else if (ex.say && !ex.gender && !ex.hideSay && C.S.settings.autoplay) C.speak(ex.say);
       let answered = false;
       const choose = i => {
         if (answered) return; answered = true; document.removeEventListener('keydown', key);
@@ -234,7 +242,7 @@
       const clozeHtml = t === 'cloze' ? esc(ex.q).replace(/_{3}(\s*_{3})*/, '<span class="gap">…</span>') : '';
       const hint = t === 'cloze' ? [ex.en, ex.hint2 ? 'word: ' + ex.hint2 : ''].filter(Boolean).join(' · ') : '';
       root.innerHTML = `<div class="ex"><div class="sub">${esc(t === 'cloze' ? (ex.sub || 'Fill the gap') : ex.sub)}</div>
-        ${ex.listen ? `<div class="listen-big">${speakBtn(ex.listen)}</div>` : t === 'cloze' ? `<div class="prompt es cloze">${clozeHtml}</div>${hint ? `<div class="hint">${esc(hint)}</div>` : ''}` : `<div class="prompt">${esc(ex.prompt)}</div>`}
+        ${ex.listen ? `<div class="listen-big">${speakBtn(ex.listen)}</div>` : t === 'cloze' ? `<div class="prompt es cloze">${clozeHtml}</div>${hint ? `<div class="hint">${esc(hint)}</div>` : ''}` : `<div class="prompt ${ex.promptEs ? 'es' : ''} ${ex.promptEs && ex.prompt.length > 28 ? 'cloze' : ''}" ${ex.promptEs ? 'lang="es"' : ''}>${esc(ex.prompt)}</div>`}
         <form class="answer" autocomplete="off">${ex.long ? `<textarea id="ans" rows="2" lang="es" spellcheck="false" autocapitalize="off" placeholder="Escribe aquí…"></textarea>` : `<input id="ans" lang="es" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Escribe aquí…">`}${accentBar()}</form>
         <div class="fb" aria-live="polite"></div><div class="foot"><button class="btn ghost" id="skip">I don't know</button><button class="btn primary" id="chk">Check</button></div></div>`;
       bindSay(root);
@@ -394,6 +402,7 @@
     pick(vpool.filter(id => C.genderOf(item(id).it[0])), 2).forEach(id => items.push(E.vocabEx(id, 'gender')));
     const m = E.matchEx(pick(vpool, 5)); if (m) items.push(m);
     earlierCards(u, 6).forEach(id => items.push(E.reviewEx(id)));
+    if (G.PRAC) G.PRAC.forUnit(u).forEach(x => items.push(x));
     return shuffle(items);
   };
   E.listenItems = u => shuffle(u.sids.map(id => E.sentEx(id, 'listen')).concat(pick(u.vids, 4).map(id => E.vocabEx(id, 'listen')), pick(u.vids, 4).map(id => E.vocabEx(id, 'mc-listen'))));

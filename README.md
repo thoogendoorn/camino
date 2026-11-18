@@ -6,7 +6,9 @@ A free, self-contained Spanish course for the browser: Castilian Spanish from A1
 * **About 3,900 words** with example sentences: 2,300 in the stages and 54 thematic decks for the rest, sized to what CEFR B2 expects.
 * **1,140 grammar drills, 450+ key sentences and 170+ graded readings** with tap-to-translate.
 * Exercises: multiple choice, typing, words in context, matching, el/la, listening quizzes, dictation, sentence building, translation, shadowing with speech recognition, conjugation in 15 tenses (vosotros included), writing with AI feedback, and role-play with an AI tutor.
-* **Exams:** an adaptive placement test, a level exam for A1–C1, and DELE-style mock exams (A1, A2, B1, B2, C1) with all four papers, timed and scored like the real thing. Writing and speaking are marked by you against the DELE criteria and a model answer; AI marking is optional.
+* **Exams:** an adaptive placement test, a level exam for A1–C1, and DELE-style mock exams (A1, A2, B1, B2, C1; two per level) with all four papers, timed and scored like the real thing. Writing and speaking are marked by you against the DELE criteria and a model answer; AI marking is optional.
+* **Practice (Entreno):** transformations, error hunt, contrast pairs, collocations, register, word building (about 780 hand-written items), plus conjugation in context, tenses in a story, dictogloss and a speed round built from the course texts.
+* **Mistake notebook:** every answer is filed under its grammar point or word topic; your weakest points get a 10-minute session.
 * An FSRS spaced-repetition scheduler, a free-practice page (Entreno), input-hour tracking with podcast links, streaks, stats and stamps.
 
 No build step, no server code and no account needed.
@@ -104,7 +106,9 @@ verbs.js       conjugation engine (15 tenses, ~120 verbs, vosotros)
 data/define.js content format and parsers
 data/a1a.js …  stages (A1–B2 in the compact text format; c1.js, c2.js in the older format)
 data/decks*.js thematic word decks
-data/mock-*.js DELE-style mock exams
+data/mock-*.js DELE-style mock exams (two per level)
+data/practice-*.js hand-written practice items
+practice.js    new exercise types, workouts, mistake notebook
 exams.js       placement test, level exams, mock exams
 config.js      your own settings (built-in Supabase URL + publishable key)
 data/resources.js  podcast and video links
@@ -125,6 +129,8 @@ la palabra | word | Esta {palabra} es difícil. | This word is difficult.
 * `D` drills: `sentence with ___ | answer (alternatives a|b) | English`
 * `S` key sentences: `spanish | english`
 * `R` readings: `[{ t: 'Title', x: 'Text', q: 'Question | wrong ; *right ; wrong' }]`
+
+Practice blocks: `CAMINO.prac('B1', 'errors', 'Por y para')(\`wrong sentence | correct sentence | why\`)`. Formats for every kind are listed in `data/define.js`.
 
 Add the file to the `files` list in `index.html`, before `core.js`. Card ids are derived from the Spanish text, so editing a word's Spanish starts a new card for it.
 

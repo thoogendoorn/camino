@@ -22,5 +22,11 @@
   });
   C.unit = level => u => { u.level = level; C.units.push(u); };
   C.deck = level => d => { d.level = level; C.decks.push(d); };
-  C.mock = m => { C.mocks.push(m); };  // DELE-style mock exams (data/mock-*.js)
+  C.mock = m => { C.mocks.push(m); };
+  // Practice blocks (data/practice-*.js): one block per level, kind and grammar point.
+  //   transform: cue | source sentence | answer(a|b)        errors: wrong sentence | correct sentence | why
+  //   contrast:  sentence with [a/b] | answer | why          colloc / register: prompt with ___ | answer | distractor;distractor | English
+  //   wordbuild: prompt | answer(a|b) | English
+  C.practice = C.practice || [];
+  C.prac = (level, kind, tag) => items => { C.practice.push({ level, kind, tag, items }); };  // DELE-style mock exams (data/mock-*.js)
 })(typeof window !== 'undefined' ? window : globalThis);

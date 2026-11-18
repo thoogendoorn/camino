@@ -259,6 +259,13 @@
     });
   };
 
+  const GUIDE = [
+    ['Reading', 'Read the questions before the text, so you know what to look for. In matching tasks, underline the key idea of each statement and look for a paraphrase, not the same words. Don\'t spend more than a fifth of the time on any one task.'],
+    ['Listening', 'Use the seconds before you press Play to read every question and guess what kind of answer comes (a time, a place, an opinion). First listening: answer what you can. Second listening: check and fill the gaps. Wrong options often repeat words from the recording.'],
+    ['Writing', 'Tick off every point the task asks for; a missing point costs more than a grammar slip. Plan for two minutes: one paragraph per point. Use connectors (además, sin embargo, por eso) and leave three minutes to check accents, agreement and verb endings.'],
+    ['Speaking', 'Use the preparation time for keywords, not full sentences. Follow the points in order, give a reason and an example for each, and keep talking: a short pause with "bueno…" or "a ver…" is fine. If you lose a word, describe it.'],
+    ['Scoring', 'Each paper is worth 25 points. The DELE pass mark is 30 out of 50 in each group: reading + writing, and listening + speaking. A weak paper can be balanced by its partner, but not by the other group.']
+  ];
   // ---------- view ----------
   const A = () => G.App;
   const bandTxt = (v, max) => `${r1(v)}<small>/${max}</small>`;
@@ -292,7 +299,8 @@
       <section class="band"><h2>Placement test</h2><p>About 15 minutes, adaptive from A1 to C1. ${lastPl ? `Last result: <b>${esc(lastPl.level)}</b> (${fmtDate(lastPl.ts)}).` : 'Take it first if you already know some Spanish.'}</p><div class="row"><button class="btn primary" id="xplace">${lastPl ? 'Take it again' : 'Start the placement test'}</button></div></section>
       <section class="band"><h2>Level exams</h2><p>40-odd questions from every stage of a level in 45 minutes. 75% passes the level and marks its stages complete. New questions each attempt.</p>
       <div class="xgrid">${LV.map(l => { const b = best('level', 'level', l); return `<div class="xcard ${b && b.pass ? 'done' : ''}"><b>${l}</b><span>${b ? 'Best ' + b.total + '%' + (b.pass ? ' · passed' : '') : 'Not taken'}</span><button class="btn small ${b && b.pass ? '' : 'primary'}" data-lx="${l}">${b ? 'Retake' : 'Take exam'}</button></div>`; }).join('')}</div></section>
-      <section class="band"><h2>Mock exams (DELE-style)</h2><p>Full papers in the DELE task formats and timings, scored like the real exam: 25 points per paper, and a pass needs 30 of 50 in each group. Take the whole exam, one paper, or practise single tasks with feedback.</p>
+      <section class="band"><h2>Mock exams (DELE-style)</h2><p>Full papers in the DELE task formats and timings, scored like the real exam: 25 points per paper, and a pass needs 30 of 50 in each group. Take the whole exam, one paper, or practise single tasks with feedback. Each level has two different mocks.</p>
+      <details class="guide"><summary>How to tackle each paper</summary><dl>${GUIDE.map(([t, d]) => `<dt>${t}</dt><dd>${esc(d)}</dd>`).join('')}</dl></details>
       ${C.MOCKS.length ? `<div class="mocks">${C.MOCKS.map(m => { const b = best('mock', 'ref', m.id), mins = PAPERS.reduce((n, [p]) => n + (m.papers[p] ? m.papers[p].minutes : 0), 0); return `<div class="mock"><div class="deck-h"><div><b>${esc(m.title)}</b><small>${esc(m.blurb || '')} · about ${Math.round(mins / 5) * 5} min in total</small></div><span class="deck-n">${b && b.full ? r1(b.total) + '/100' : ''}</span></div>
         <div class="row wrap"><button class="btn small primary" data-mx="${m.id}">Full exam</button>${PAPERS.filter(([p]) => m.papers[p]).map(([p, n]) => `<button class="btn small" data-mx="${m.id}" data-only="${p}">${n}</button>`).join('')}</div>
         <details><summary>Practise single tasks</summary><ul class="tasks">${PAPERS.filter(([p]) => m.papers[p]).flatMap(([p, n]) => m.papers[p].tasks.map((t, i) => `<li><span>${n} ${i + 1}: ${esc(t.title)}</span><button class="btn small ghost" data-pt="${m.id}|${p}|${i}">Practise</button></li>`)).join('')}</ul></details></div>`; }).join('')}</div>` : '<p class="note">The mock exam files did not load.</p>'}</section>
