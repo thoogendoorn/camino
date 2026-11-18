@@ -4,7 +4,7 @@
   const { $, $$, esc } = C;
   const S = () => C.S;
   const A = G.App = {};
-  const ROUTES = ['today', 'camino', 'review', 'gym', 'decks', 'verbs', 'library', 'tutor', 'progress', 'prefs', 'about'];
+  const ROUTES = ['today', 'camino', 'review', 'gym', 'exams', 'decks', 'verbs', 'library', 'tutor', 'progress', 'prefs', 'about'];
   let unitStep = {}; // remembered open step per unit (in memory)
   let readTab = {};  // remembered reading tab per unit
 
@@ -23,7 +23,7 @@
   A.go = r => { if (location.hash.slice(1) === r) A.render(); else location.hash = r; };
   addEventListener('hashchange', () => { if (!EX.isActive()) A.render(); window.scrollTo(0, 0); });
 
-  const views = () => ({ today: viewToday, camino: viewCamino, review: viewReview, gym: viewGym, decks: viewDecks, verbs: viewVerbs, library: viewLibrary, tutor: viewTutor, progress: viewProgress, prefs: viewSettings, about: viewAbout });
+  const views = () => ({ today: viewToday, camino: viewCamino, review: viewReview, gym: viewGym, exams: () => G.EXAMS.view(), decks: viewDecks, verbs: viewVerbs, library: viewLibrary, tutor: viewTutor, progress: viewProgress, prefs: viewSettings, about: viewAbout });
   A.render = () => {
     const r = A.route();
     $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + r || (r.startsWith('unit-') && a.getAttribute('href') === '#camino')));
@@ -74,7 +74,7 @@
         <p class="lead">Stage ${u.n + 1} of ${C.UNITS.length} · <b>${esc(u.level)} ${esc(lv.name)}</b> · ${esc(lv.stage)}</p>
         <div class="mini-route" aria-hidden="true">${C.UNITS.map(x => `<i class="${C.isDone(x.id) ? 'd' : x.id === u.id ? 'c' : ''}"></i>`).join('')}</div></div>
       <div class="hero-ring">${ring(done / goal, Math.round(done) + '′', 'of ' + goal + ' min today')}</div></div></section>
-    ${fresh ? `<section class="band welcome"><h2>Welcome to your Camino</h2><p>Every unit is a stage of the Camino de Santiago, from A1 in Roncesvalles to C2 in Santiago. A good 45-minute day: <b>clear your reviews</b>, <b>do one or two lesson steps</b>, <b>learn a batch of new words</b>, and <b>listen to real Spanish for ~15 minutes</b>. Already know the basics? Open any early stage and take its <b>Checkpoint</b> to skip ahead, or switch on free roam in Settings.</p></section>` : ''}
+    ${fresh ? `<section class="band welcome"><h2>Welcome to your Camino</h2><p>Every unit is a stage of the Camino de Santiago, from A1 in Roncesvalles to C2 in Santiago. A good 45-minute day: <b>clear your reviews</b>, <b>do one or two lesson steps</b>, <b>learn a batch of new words</b>, and <b>listen to real Spanish for ~15 minutes</b>. Already know some Spanish? <a href="#exams">Take the 15-minute placement test</a> and start at your level.</p></section>` : ''}
     ${backupDue ? `<section class="band"><p class="note">Your progress lives only in this browser. <a href="#prefs">Download a backup</a> or set up free sync so you never lose it.</p></section>` : ''}
     <section class="band plan"><h2>Today's plan</h2><div class="cards4">
       <a class="plan-card ${due ? 'hot' : ''}" href="#review"><span class="pc-k">1 · Review</span><span class="pc-big">${due}</span><span class="pc-s">${due ? 'cards due · about ' + reviewMin + ' min' : 'Nothing due. ' + (rec.n ? rec.n + ' reviewed today.' : 'Come back tomorrow.')}</span></a>
@@ -317,6 +317,7 @@
       <div class="gym">${WORKOUTS.map(([k, t, d, n]) => { const c = n(p); return `<button class="plan-card gymc" data-w="${k}" ${c ? '' : 'disabled'}><span class="pc-k">${esc(t)}</span><span class="pc-s">${esc(d)}</span>${c ? '' : '<span class="pc-s"><i>Learn some words first</i></span>'}</button>`; }).join('')}
       <a class="plan-card gymc" href="#verbs"><span class="pc-k">Verb drills</span><span class="pc-s">Conjugation in every tense, vosotros included</span></a></div></section>`;
   }
+  binders.exams = () => G.EXAMS.bind();
   binders.gym = () => $$('[data-w]').forEach(b => b.onclick = () => {
     const k = b.dataset.w, w = WORKOUTS.find(x => x[0] === k);
     EX.run({ title: w[1], items: EX.workout(k), graded: k !== 'speak', requeue: k !== 'speak' && k !== 'reading', onDone: () => A.render() });
@@ -512,6 +513,7 @@ grant select, insert, update on public.camino_state to authenticated;`;
         <h3>Backup file</h3><p class="muted">A backup holds your whole progress. Importing merges it with what's here, so you can also use backups to move between devices without any sync. Last backup: ${S().lastBackup ? new Date(S().lastBackup).toLocaleDateString('en-GB') : 'never'}.</p>
         <div class="row wrap"><button class="btn" id="exp">Download backup</button><label class="btn" for="impf">Import backup</label><input type="file" id="impf" accept=".json,application/json" hidden></div>
         <div id="expbox"></div></div>
+      <div class="panel"><h2>Reported problems</h2>${(S().reports || []).length ? `<p>${S().reports.length} report${S().reports.length > 1 ? 's' : ''}. Copy them and send them to me (Claude) to get them fixed.</p><ul class="replist">${S().reports.slice(0, 8).map(r => `<li><b>${esc(r.item.prompt || r.where)}</b> → ${esc(r.item.answer || '')}<br><span class="muted">${esc(r.note || '(no note)')}</span></li>`).join('')}</ul><div class="row wrap"><button class="btn" id="repcopy">Copy all reports</button><button class="btn ghost" id="repclear">Clear</button></div>` : '<p class="muted">Use the ⚑ button at the top of any exercise to flag a wrong answer or a typo. Reports collect here.</p>'}</div>
       <div class="panel danger"><h2>Start over</h2><div id="resetbox"><button class="btn ghost" id="reset">Reset all progress…</button></div></div>
       <p><a href="#about">How Camino works, and how to run it yourself</a></p></section>`;
   }
@@ -554,6 +556,8 @@ grant select, insert, update on public.camino_state to authenticated;`;
       try { C.importBackup(JSON.parse(await f.text())); C.toast('Backup merged into your progress.'); A.render(); }
       catch (err) { C.toast('That file is not a Camino backup.'); }
     };
+    const rc = $('#repcopy'); if (rc) rc.onclick = () => { const txt = S().reports.map(r => `[${new Date(r.ts).toISOString().slice(0, 10)}] ${r.where} | ${r.item.type}: ${r.item.prompt} → ${r.item.answer} | ${r.item.card} | note: ${r.note}`).join('\n'); navigator.clipboard.writeText(txt).then(() => C.toast('Copied ' + S().reports.length + ' reports.'), () => C.toast('Could not copy.')); };
+    const rx = $('#repclear'); if (rx) rx.onclick = () => { S().reports = []; C.save(); A.render(); };
     $('#reset').onclick = () => {
       $('#resetbox').innerHTML = `<p><b>This deletes every card, stage and log${C.syncState() === 'on' ? ' (synced copies are overwritten too)' : ''}.</b> Download a backup first if unsure.</p><div class="row"><button class="btn ghost" id="rno">Cancel</button><button class="btn bad" id="ryes">Yes, delete everything</button></div>`;
       $('#rno').onclick = () => A.render();

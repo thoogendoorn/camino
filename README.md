@@ -6,6 +6,7 @@ A free, self-contained Spanish course for the browser: Castilian Spanish from A1
 * **About 3,900 words** with example sentences: 2,300 in the stages and 54 thematic decks for the rest, sized to what CEFR B2 expects.
 * **1,140 grammar drills, 450+ key sentences and 170+ graded readings** with tap-to-translate.
 * Exercises: multiple choice, typing, words in context, matching, el/la, listening quizzes, dictation, sentence building, translation, shadowing with speech recognition, conjugation in 15 tenses (vosotros included), writing with AI feedback, and role-play with an AI tutor.
+* **Exams:** an adaptive placement test, a level exam for A1–C1, and DELE-style mock exams (A1, A2, B1, B2, C1) with all four papers, timed and scored like the real thing. Writing and speaking are marked by you against the DELE criteria and a model answer; AI marking is optional.
 * An FSRS spaced-repetition scheduler, a free-practice page (Entreno), input-hour tracking with podcast links, streaks, stats and stamps.
 
 No build step, no server code and no account needed.
@@ -58,13 +59,17 @@ You have three options:
    alter table public.camino_state enable row level security;
    create policy "own row only" on public.camino_state
      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+   -- Supabase projects no longer grant API access to new tables automatically:
+   grant select, insert, update on public.camino_state to authenticated;
    ```
 
 3. Optional but easier: **Authentication › Sign In / Providers › Email** and turn off **Confirm email**. (Otherwise you click a link in a confirmation e-mail first.)
-4. Open **Project Settings › API** (or **Data API**) and copy the **Project URL** and the **anon public** key.
+4. Copy two things:
+   * the **Project URL** (`https://xxxx.supabase.co`): **Project Settings › Data API**, or the **Connect** button at the top of the dashboard;
+   * the **Publishable key** (`sb_publishable_…`): **Project Settings › API Keys**. On older projects this is the legacy **anon public** key; either works. Never use the **secret** key (`sb_secret_…`) in a browser.
 5. In Camino open **Settings › Saving and sync**, paste the URL and key, enter an e-mail and password, and click **Create account**. On your other devices, paste the same URL and key and click **Sign in**.
 
-The anon key is designed to be public; the row-level-security policy makes sure each account can only read and write its own row. Your sign-in token is stored only in that browser. Free Supabase projects pause after a week without any use; open the Supabase dashboard and click **Restore** if that happens (your data stays).
+The publishable (anon) key is designed to be public; the row-level-security policy makes sure each account can only read and write its own row. Your sign-in token is stored only in that browser. Free Supabase projects pause after a week without any use; open the Supabase dashboard and click **Restore** if that happens (your data stays).
 
 ## 4. The AI tutor (optional)
 
@@ -99,6 +104,9 @@ verbs.js       conjugation engine (15 tenses, ~120 verbs, vosotros)
 data/define.js content format and parsers
 data/a1a.js …  stages (A1–B2 in the compact text format; c1.js, c2.js in the older format)
 data/decks*.js thematic word decks
+data/mock-*.js DELE-style mock exams
+exams.js       placement test, level exams, mock exams
+config.js      your own settings (built-in Supabase URL + publishable key)
 data/resources.js  podcast and video links
 data/migrate.js    upgrades progress saved by the first version
 ```
@@ -118,7 +126,7 @@ la palabra | word | Esta {palabra} es difícil. | This word is difficult.
 * `S` key sentences: `spanish | english`
 * `R` readings: `[{ t: 'Title', x: 'Text', q: 'Question | wrong ; *right ; wrong' }]`
 
-Add the file to `index.html` before `core.js`. Card ids are derived from the Spanish text, so editing a word's Spanish starts a new card for it.
+Add the file to the `files` list in `index.html`, before `core.js`. Card ids are derived from the Spanish text, so editing a word's Spanish starts a new card for it.
 
 ## 7. Privacy
 

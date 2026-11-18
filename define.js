@@ -8,6 +8,7 @@
 (function (G) {
   'use strict';
   const C = G.CAMINO = G.CAMINO || { units: [], decks: [] };
+  C.mocks = C.mocks || [];
   G.CAMINO_UNITS = C.units; // v1 files push here directly
   const lines = s => String(s || '').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
   const fields = l => l.split(' | ').map(f => f.trim());
@@ -21,4 +22,5 @@
   });
   C.unit = level => u => { u.level = level; C.units.push(u); };
   C.deck = level => d => { d.level = level; C.decks.push(d); };
+  C.mock = m => { C.mocks.push(m); };  // DELE-style mock exams (data/mock-*.js)
 })(typeof window !== 'undefined' ? window : globalThis);

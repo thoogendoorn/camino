@@ -75,6 +75,8 @@
   });
   C.DECKS.forEach(d => { d.vids = d.vocab.map(v => addItem(C.vid(v[0]), 'v', v, d)); });
   C.cardItem = id => C.ITEMS[id] || null;
+  C.MOCKS = ((CM.mocks) || []).slice().sort((a, b) => C.lvIdx(a.level) - C.lvIdx(b.level) || String(a.id).localeCompare(b.id));
+  C.MOCK = {}; C.MOCKS.forEach(m => C.MOCK[m.id] = m);
   C.VOCAB_TOTAL = Object.values(C.ITEMS).filter(x => x.t === 'v').length;
 
   C.STEPS = [
@@ -91,7 +93,7 @@
 
   // ---------- state ----------
   const blankSettings = () => ({ goal: 45, rate: 0.95, voice: '', tts: 'auto', autoplay: true, strictAccents: false, reviewCap: 150, batch: 10, newPerDay: 30, freeRoam: false, ai: 'auto', aiProv: 'anthropic', aiModel: '' });
-  const blank = () => ({ v: 2, updated: 0, created: Date.now(), settings: blankSettings(), units: {}, cards: {}, days: {}, input: [], writing: {}, badges: {}, tutorChats: 0, lastBackup: 0 });
+  const blank = () => ({ v: 2, updated: 0, created: Date.now(), settings: blankSettings(), units: {}, cards: {}, days: {}, input: [], writing: {}, badges: {}, tutorChats: 0, lastBackup: 0, exams: [], reports: [] });
   C.blank = blank;
   C.S = blank();
   function load() {
@@ -235,7 +237,15 @@
     ['r50000', 'Cincuenta mil', '50,000 reviews done', s => s.reviews >= 50000],
     ['h100', '100 horas', '100 hours of total study', s => s.totalMin >= 6000],
     ['h500', '500 horas', '500 hours of total study', s => s.totalMin >= 30000],
-    ['tutor', 'Primera charla', 'First conversation with the AI tutor', () => C.S.tutorChats > 0]
+    ['tutor', 'Primera charla', 'First conversation with the AI tutor', () => C.S.tutorChats > 0],
+    ['placement', 'Punto de partida', 'Took the placement test', () => (C.S.exams || []).some(e => e.kind === 'placement')],
+    ['lx-a1', 'Examen A1', 'Passed the A1 level exam', () => (C.S.exams || []).some(e => e.kind === 'level' && e.level === 'A1' && e.pass)],
+    ['lx-a2', 'Examen A2', 'Passed the A2 level exam', () => (C.S.exams || []).some(e => e.kind === 'level' && e.level === 'A2' && e.pass)],
+    ['lx-b1', 'Examen B1', 'Passed the B1 level exam', () => (C.S.exams || []).some(e => e.kind === 'level' && e.level === 'B1' && e.pass)],
+    ['lx-b2', 'Examen B2', 'Passed the B2 level exam', () => (C.S.exams || []).some(e => e.kind === 'level' && e.level === 'B2' && e.pass)],
+    ['lx-c1', 'Examen C1', 'Passed the C1 level exam', () => (C.S.exams || []).some(e => e.kind === 'level' && e.level === 'C1' && e.pass)],
+    ['mock1', 'Simulacro', 'Completed a full mock exam', () => (C.S.exams || []).some(e => e.kind === 'mock' && e.full)],
+    ['mockpass', 'Apto', 'Passed a full mock exam (30/50 in both groups)', () => (C.S.exams || []).some(e => e.kind === 'mock' && e.full && e.pass)]
   ];
   C.checkBadges = () => {
     const s = C.stats(); const fresh = [];
@@ -294,8 +304,10 @@
     S.tutorChats = Math.max(S.tutorChats || 0, m.tutorChats || 0);
     S.lastBackup = Math.max(S.lastBackup || 0, m.lastBackup || 0);
     if (m.created) S.created = Math.min(S.created || Date.now(), m.created);
+    if (m.exams) { S.exams = S.exams || []; const ids = new Set(S.exams.map(e => e.id)); m.exams.forEach(e => { if (!ids.has(e.id)) S.exams.push(e); }); S.exams.sort((a, b) => b.ts - a.ts); }
+    if (m.reports) { S.reports = S.reports || []; const ks = new Set(S.reports.map(r => r.ts)); m.reports.forEach(r => { if (!ks.has(r.ts)) S.reports.push(r); }); }
   };
-  C.metaOf = S => ({ units: S.units, days: S.days, input: S.input.slice(0, 1500), badges: S.badges, writing: S.writing, settings: S.settings, updated: S.updated, created: S.created, tutorChats: S.tutorChats, lastBackup: S.lastBackup });
+  C.metaOf = S => ({ units: S.units, days: S.days, input: S.input.slice(0, 1500), badges: S.badges, writing: S.writing, settings: S.settings, updated: S.updated, created: S.created, tutorChats: S.tutorChats, lastBackup: S.lastBackup, exams: (S.exams || []).slice(0, 300), reports: (S.reports || []).slice(0, 200) });
 
   // ---------- sync route 1: claude.ai artifact storage (private per person) ----------
   const SHARDS = 16;
@@ -454,6 +466,27 @@
         speechSynthesis.speak(u);
       } catch (e) { }
     }
+  };
+  // A script with speakers ("Carmen: …") is read line by line, alternating Spanish voices (or pitch, with one voice).
+  C.parseScript = script => { const spk = []; return String(script).split('\n').map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñü .]{0,24}):\s+(.*)$/); if (!m) return { who: null, text: l }; if (!spk.includes(m[1])) spk.push(m[1]); return { who: m[1], v: spk.indexOf(m[1]), text: m[2] }; }); };
+  C.speakScript = (script, opts = {}) => {
+    const lines = C.parseScript(script);
+    const rate = (opts.slow ? 0.75 : 1) * (C.S.settings.rate || 1);
+    const useClaude = C.cap.tts && (C.S.settings.tts === 'claude' || (C.S.settings.tts === 'auto' && !C.pickVoice()));
+    if (useClaude || !G.speechSynthesis) { C.speak(lines.map(l => l.text).join(' '), opts); return; }
+    try {
+      speechSynthesis.cancel();
+      const es = voices.filter(v => /es[-_]ES/i.test(v.lang)), pool = es.length ? es : voices, base = C.pickVoice();
+      const ordered = base ? [base].concat(pool.filter(v => v !== base)) : pool;
+      lines.forEach((l, i) => {
+        const u = new SpeechSynthesisUtterance(l.text); u.lang = 'es-ES'; u.rate = rate;
+        const k = l.v == null ? 0 : l.v;
+        if (ordered.length) u.voice = ordered[k % ordered.length];
+        if (ordered.length < 2 && k % 2 === 1) u.pitch = 1.35; else if (ordered.length < 2 && k % 3 === 2) u.pitch = 0.8;
+        if (i === lines.length - 1 && opts.onEnd) u.onend = opts.onEnd;
+        speechSynthesis.speak(u);
+      });
+    } catch (e) { }
   };
   C.stopSpeak = () => { try { speechSynthesis.cancel(); } catch (e) { } try { C.cap.tts && C.cap.tts.stop(); } catch (e) { } };
 

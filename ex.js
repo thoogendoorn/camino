@@ -6,6 +6,9 @@
   const PERS = Verbs.PERS;
   const ACCENTS = ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ', '¿', '¡'];
   const item = id => C.ITEMS[id];
+  let EXAM = false;           // exam mode: no feedback, no colouring, straight to the next item
+  E.renderers = {};          // extra exercise types (exams.js)
+  E.isExam = () => EXAM;
 
   // ---------- builders (all take card ids) ----------
   const levelVocab = lvl => Object.values(C.ITEMS).filter(x => x.t === 'v' && (!lvl || x.src.level === lvl)).map(x => x.it);
@@ -84,47 +87,71 @@
 
   // ---------- session runner ----------
   let active = null;
-  E.run = ({ title, items, requeue = true, onDone, graded = true, exitLabel = 'Exit' }) => {
+  E.run = ({ title, items, requeue = true, onDone, graded = true, exitLabel = 'Exit', exam = false, seconds = 0, more = null, noSummary = false }) => {
     items = items.filter(Boolean);
+    if (more && !items.length) { const x = more([]); if (x) items.push(x); }
     if (!items.length) { C.toast('Nothing to practise here right now.'); return; }
+    if (exam) { graded = false; requeue = false; }
     const root = $('#session'); root.hidden = false; document.body.classList.add('in-session');
-    const st = { items, i: 0, results: [], total: items.length };
-    active = st;
-    root.innerHTML = `<div class="sess-top"><button class="btn ghost" id="sx">${esc(exitLabel)}</button><div class="sess-title">${esc(title)}</div><div class="sess-count" id="scount"></div><div class="bar"><i id="sbar"></i></div></div><div class="sess-body" id="sbody"></div>`;
+    const st = { items, i: 0, results: [], total: items.length, exam };
+    active = st; EXAM = exam;
+    let timer = null, left = seconds, timeUp = false;
+    root.innerHTML = `<div class="sess-top"><button class="btn ghost" id="sx">${esc(exitLabel)}</button><div class="sess-title">${esc(title)}</div><div class="sess-count"><span id="stimer" class="stimer" ${seconds ? '' : 'hidden'}></span> <span id="scount"></span> <button class="btn small ghost" id="srep" title="Report a problem with this question">⚑</button></div><div class="bar"><i id="sbar"></i></div><div id="repbox" hidden></div></div><div class="sess-body" id="sbody"></div>`;
     $('#sx').onclick = () => finish(true);
+    $('#srep').onclick = () => reportBox(title);
+    const tick = () => { const el = $('#stimer'); if (!el) return; el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'); el.classList.toggle('warn', left <= 60); if (left <= 0) { timeUp = true; finish(false); } left--; };
+    const startTimer = () => { if (seconds && !timer) { tick(); timer = setInterval(tick, 1000); } };
     const next = () => {
+      if (st.i >= st.items.length && more) { const x = more(st.results); if (x) st.items.push(x); }
       if (st.i >= st.items.length) return finish(false);
-      $('#sbar').style.width = (100 * st.i / st.items.length) + '%';
-      $('#scount').textContent = (st.i + 1) + ' / ' + st.items.length;
+      $('#sbar').style.width = (100 * st.i / Math.max(st.items.length, more ? st.i + 1 : 1)) + '%';
+      $('#scount').textContent = more ? 'Question ' + (st.results.length + 1) : (st.i + 1) + ' / ' + st.items.length;
       const ex = st.items[st.i]; E._cur = ex;
+      if (ex.type !== 'note') startTimer();
       $('#sbody').scrollTop = 0; root.scrollTop = 0;
       renderEx(ex, $('#sbody'), res => {
-        if (ex.type !== 'intro' && ex.type !== 'speak') {
-          st.results.push({ ex, ...res });
+        if (ex.type !== 'intro' && ex.type !== 'speak' && ex.type !== 'note') {
+          const pts = res.pts != null ? res.pts : (res.ok ? 1 : 0), max = res.max != null ? res.max : 1;
+          st.results.push({ ex, ...res, pts, max });
           if (graded && ex.card) C.grade(ex.card, res.ok ? (res.close ? 2 : (res.easy ? 4 : 3)) : 1);
-          if (!res.ok && requeue && !ex.retry && ex.type !== 'match') { const copy = Object.assign({}, ex, { retry: true }); st.items.splice(Math.min(st.items.length, st.i + 4), 0, copy); }
+          if (!res.ok && requeue && !ex.retry && ex.type !== 'match' && !E.renderers[ex.type]) { const copy = Object.assign({}, ex, { retry: true }); st.items.splice(Math.min(st.items.length, st.i + 4), 0, copy); }
         }
         st.i++; next();
       });
     };
     function finish(early) {
-      C.stopSpeak(); active = null;
+      if (active !== st) return;
+      clearInterval(timer); C.stopSpeak(); active = null; EXAM = false; C.dictOn({});
       const scored = st.results.filter(r => !r.ex.retry);
       const ok = scored.filter(r => r.ok).length, n = scored.length;
       const pct = n ? ok / n : 1;
-      if (early && !st.results.length) { close(); onDone && onDone({ pct: 0, ok: 0, n: 0, early: true, results: [] }); return; }
+      const out = { pct, ok, n, early: early && !timeUp, timeUp, results: st.results, items: st.items };
+      if (noSummary || (early && !st.results.length)) { close(); onDone && onDone(out); return; }
       $('#sbar').style.width = '100%';
-      const wrong = st.results.filter(r => !r.ok && !r.ex.retry && r.ex.type !== 'match');
+      const wrong = st.results.filter(r => !r.ok && !r.ex.retry && r.ex.type !== 'match' && !E.renderers[r.ex.type]);
       $('#sbody').innerHTML = `<div class="ex done-card"><div class="big-num">${Math.round(pct * 100)}%</div><p class="lead">${ok} of ${n} correct${early ? ' (stopped early)' : ''}</p>
         ${wrong.length ? `<div class="mistakes"><h3>Worth another look</h3>${wrong.slice(0, 15).map(r => `<div class="mis"><span class="es">${esc(r.ex.show || r.ex.answer || r.ex.es || '')}</span><span class="en">${esc(r.ex.en || r.ex.prompt || '')}</span></div>`).join('')}</div>` : '<p>Clean run. ¡Muy bien!</p>'}
         <div class="row"><button class="btn primary" id="sdone">Continue</button></div></div>`;
-      $('#sdone').onclick = () => { close(); onDone && onDone({ pct, ok, n, early, results: st.results }); };
+      $('#sdone').onclick = () => { close(); onDone && onDone(out); };
       $('#sdone').focus();
       C.checkBadges();
     }
     function close() { root.hidden = true; root.innerHTML = ''; document.body.classList.remove('in-session'); G.App && G.App.render(); }
     next();
   };
+  function reportBox(title) {
+    const box = $('#repbox'); if (!box) return;
+    if (!box.hidden) { box.hidden = true; return; }
+    const ex = E._cur || {};
+    box.hidden = false;
+    box.innerHTML = `<div class="repbox"><label for="reptxt">What's wrong with this question?</label><textarea id="reptxt" rows="2" placeholder="e.g. the answer should also accept…"></textarea><div class="row"><button class="btn small primary" id="repsave">Save report</button><button class="btn small ghost" id="repno">Cancel</button></div></div>`;
+    $('#repno').onclick = () => { box.hidden = true; };
+    $('#repsave').onclick = () => {
+      const what = { type: ex.type, prompt: ex.prompt || ex.q || ex.es || ex.listen || ex.title || '', answer: ex.show || ex.answer || (ex.answers || [])[0] || '', card: ex.card || ex.ref || '' };
+      (C.S.reports = C.S.reports || []).unshift({ ts: Date.now(), where: title, note: $('#reptxt').value.trim(), item: what });
+      C.save(); box.hidden = true; C.toast('Saved. Find your reports under Settings.');
+    };
+  }
   E.isActive = () => !!active;
 
   // ---------- exercise renderers ----------
@@ -135,6 +162,7 @@
   function bindAccents(root, input) { $$('[data-acc]', root).forEach(b => b.onclick = () => { const s = input.selectionStart ?? input.value.length, e = input.selectionEnd ?? s; input.value = input.value.slice(0, s) + b.dataset.acc + input.value.slice(e); input.focus(); input.setSelectionRange(s + 1, s + 1); }); }
 
   function feedback(root, ex, res, input, done) {
+    if (EXAM) { done(res); return; }
     const fb = $('.fb', root);
     const correct = ex.show || ex.answer || ex.es || '';
     fb.className = 'fb ' + (res.ok ? (res.close ? 'close' : 'good') : 'bad');
@@ -168,6 +196,12 @@
   function renderEx(ex, root, done) {
     C.stopSpeak();
     const t = ex.type;
+    if (E.renderers[t]) return E.renderers[t](ex, root, done, { exam: EXAM, feedback });
+    if (t === 'note') {
+      root.innerHTML = `<div class="ex note-ex"><div class="sub">${esc(ex.kicker || '')}</div><h2>${esc(ex.title || '')}</h2><div class="note-body">${ex.html || ''}</div><div class="foot"><button class="btn primary" id="cont">${esc(ex.button || 'Start')}</button></div></div>`;
+      $('#cont', root).onclick = () => done({}); $('#cont', root).focus();
+      return;
+    }
     if (t === 'intro') {
       root.innerHTML = `<div class="ex intro"><div class="sub">New word</div><div class="prompt es">${esc(ex.es)}</div><div class="say-row">${speakBtn(ex.es)}</div><div class="meaning">${esc(ex.en)}</div>
         ${ex.ex ? `<div class="example"><span class="es">${ex.ex.target ? esc(ex.ex.pre) + '<u>' + esc(ex.ex.target) + '</u>' + esc(ex.ex.post) : esc(ex.ex.es)}</span> ${speakBtn(ex.ex.es, 'Listen to example')}<span class="en">${esc(ex.ex.en)}</span></div>` : ''}
@@ -188,7 +222,7 @@
       const choose = i => {
         if (answered) return; answered = true; document.removeEventListener('keydown', key);
         const val = ex.options[i], ok = val === ex.answer;
-        $$('.opt', root).forEach((b, j) => { b.disabled = true; if (ex.options[j] === ex.answer) b.classList.add('right'); else if (j === i) b.classList.add('wrong'); });
+        $$('.opt', root).forEach((b, j) => { b.disabled = true; if (EXAM) return; if (ex.options[j] === ex.answer) b.classList.add('right'); else if (j === i) b.classList.add('wrong'); });
         feedback(root, Object.assign({}, ex, { show: ex.gender ? ex.show : ex.answer, say: ex.sayAnswer ? ex.answer : ex.say }), { ok }, null, done);
       };
       const key = e => { const n = +e.key; if (n >= 1 && n <= ex.options.length) choose(n - 1); };
@@ -211,7 +245,7 @@
         if (answered) return; answered = true;
         const v = give ? '' : inp.value; inp.disabled = true;
         const res = give ? { ok: false } : C.check(v, ex.answers, { sentence: !!ex.sentence });
-        if (t === 'cloze') { const g = $('.gap', root); if (g) { g.textContent = res.ok ? (v || ex.show) : ex.show; g.classList.add(res.ok ? 'gfill' : 'gbad'); } }
+        if (t === 'cloze' && !EXAM) { const g = $('.gap', root); if (g) { g.textContent = res.ok ? (v || ex.show) : ex.show; g.classList.add(res.ok ? 'gfill' : 'gbad'); } }
         feedback(root, ex, res, v, done);
       };
       $('form', root).onsubmit = e => { e.preventDefault(); check(); };
@@ -303,7 +337,7 @@
     if (t === 'readq') {
       root.innerHTML = `<div class="ex"><div class="sub">Comprehension · ${esc(ex.title || '')}</div>${ex.text ? `<details class="rtext"><summary>Show the text</summary><div class="reading small" lang="es">${esc(ex.text).replace(/\n/g, '<br>')}</div></details>` : ''}<div class="prompt es cloze">${esc(ex.q)}</div><div class="opts">${ex.options.map((o, i) => `<button class="opt" data-i="${i}"><span class="k">${i + 1}</span>${esc(o)}</button>`).join('')}</div><div class="fb"></div><div class="foot"></div></div>`;
       $$('.opt', root).forEach(b => b.onclick = () => {
-        const i = +b.dataset.i; $$('.opt', root).forEach((x, j) => { x.disabled = true; if (j === ex.answer) x.classList.add('right'); else if (j === i) x.classList.add('wrong'); });
+        const i = +b.dataset.i; $$('.opt', root).forEach((x, j) => { x.disabled = true; if (EXAM) return; if (j === ex.answer) x.classList.add('right'); else if (j === i) x.classList.add('wrong'); });
         feedback(root, Object.assign({}, ex, { show: ex.options[ex.answer], say: ex.options[ex.answer] }), { ok: i === ex.answer }, null, done);
       });
     }
