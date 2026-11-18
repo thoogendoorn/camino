@@ -478,7 +478,9 @@
 );
 alter table public.camino_state enable row level security;
 create policy "own row only" on public.camino_state
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);`;
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- Supabase projects no longer grant API access to new tables automatically:
+grant select, insert, update on public.camino_state to authenticated;`;
   function viewSettings() {
     const s = S().settings, vs = C.voices(), sb = C.secrets.sb || {}, cl = C.cloud;
     return `<section class="band"><h1>Ajustes</h1>
@@ -502,7 +504,8 @@ create policy "own row only" on public.camino_state
         <h3>Free cross-device sync with Supabase (optional)</h3>
         <p class="muted">Works anywhere, including GitHub Pages. Create a free project at supabase.com, run the SQL below once in its SQL editor, then paste the project URL and the publishable key (sb_publishable_…, never the secret key) here and create an account. See the README for step-by-step instructions.</p>
         <details><summary>SQL to run once</summary><pre class="code">${esc(SQL)}</pre><button class="btn small" id="sqlc">Copy SQL</button></details>
-        <div class="row wrap"><input id="sbu" placeholder="https://xxxx.supabase.co" value="${esc(sb.url || '')}" style="flex:1;min-width:14em" aria-label="Project URL"><input id="sbk" placeholder="publishable key (sb_publishable_…)" value="${esc(sb.key || '')}" style="flex:1;min-width:14em" aria-label="Publishable key"></div>
+        ${C.builtInSync && sb.url === (G.CAMINO_CONFIG || {}).supabaseUrl ? `<p class="muted">Sync server built in via <code>config.js</code>: just sign in. <a href="#" id="sbedit">Use a different project</a></p>` : ''}
+        <div class="row wrap" id="sbcfg" ${C.builtInSync && sb.url === (G.CAMINO_CONFIG || {}).supabaseUrl ? 'hidden' : ''}><input id="sbu" placeholder="https://xxxx.supabase.co" value="${esc(sb.url || '')}" style="flex:1;min-width:14em" aria-label="Project URL"><input id="sbk" placeholder="publishable key (sb_publishable_…)" value="${esc(sb.key || '')}" style="flex:1;min-width:14em" aria-label="Publishable key"></div>
         ${cl.signedIn() ? `<p>Signed in as <b>${esc(sb.email || '')}</b> · ${esc(cl.status === 'on' ? 'synced ' + (cl.lastSync ? new Date(cl.lastSync).toLocaleTimeString('en-GB') : '') : cl.status)}${cl.err ? ' · ' + esc(cl.err) : ''}</p><div class="row wrap"><button class="btn" id="sbnow">Sync now</button><button class="btn ghost" id="sbout">Sign out</button></div>`
         : `<div class="row wrap"><input id="sbe" type="email" placeholder="email" autocomplete="username" aria-label="Email"><input id="sbp" type="password" placeholder="password (8+ characters)" autocomplete="current-password" aria-label="Password"><button class="btn primary" id="sbin">Sign in</button><button class="btn" id="sbup">Create account</button></div>`}
         <div id="sbout2"></div>
@@ -527,6 +530,7 @@ create policy "own row only" on public.camino_state
     const sbOut = $('#sbout2');
     const saveCfg = () => { const url = $('#sbu').value.trim(), key = $('#sbk').value.trim(); C.secrets.sb = Object.assign(C.secrets.sb || {}, { url, key }); C.saveSecrets(); return url && key; };
     $('#sbu').onchange = saveCfg; $('#sbk').onchange = saveCfg;
+    const sbe = $('#sbedit'); if (sbe) sbe.onclick = e => { e.preventDefault(); $('#sbcfg').hidden = false; sbe.parentNode.remove(); };
     const auth = async (fn) => {
       if (!saveCfg()) { sbOut.innerHTML = '<p class="note">Fill in the project URL and anon key first.</p>'; return; }
       const e = $('#sbe').value.trim(), p = $('#sbp').value; if (!e || p.length < 6) { sbOut.innerHTML = '<p class="note">Enter your email and a password.</p>'; return; }

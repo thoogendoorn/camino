@@ -120,6 +120,11 @@
   }
   C.migrateState = migrate;
   C.secrets = (() => { try { return JSON.parse(localStorage.getItem(LS_SECRET) || '{}'); } catch (e) { return {}; } })();
+  { // built-in sync server from config.js (URL + publishable key), unless this browser has its own
+    const K = G.CAMINO_CONFIG || {};
+    if (K.supabaseUrl && K.supabaseKey && !(C.secrets.sb && C.secrets.sb.url && C.secrets.sb.key)) C.secrets.sb = Object.assign({}, C.secrets.sb || {}, { url: K.supabaseUrl, key: K.supabaseKey });
+    C.builtInSync = !!(K.supabaseUrl && K.supabaseKey);
+  }
   C.saveSecrets = () => { try { localStorage.setItem(LS_SECRET, JSON.stringify(C.secrets)); } catch (e) { } };
   let saveT = null;
   C.persist = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(C.S)); return true; } catch (e) { return false; } };

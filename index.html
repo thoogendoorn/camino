@@ -221,7 +221,7 @@ code{background:var(--stone);padding:1px 5px;border-radius:5px}
 /* Loads the app in order. Course files are looked for in data/ first, then next to index.html,
    so the app also works if the data folder's files were uploaded without the folder. */
 (function () {
-  var files = ['verbs.js', 'data/define.js', 'data/resources.js', 'data/a1a.js', 'data/a1b.js', 'data/a2a.js', 'data/a2b.js', 'data/b1a.js', 'data/b1b.js', 'data/b2a.js', 'data/b2b.js', 'data/c1.js', 'data/c2.js', 'data/decks1.js', 'data/decks2.js', 'data/decks3.js', 'data/decks4.js', 'data/decks5.js', 'data/migrate.js', 'core.js', 'ex.js', 'app.js'];
+  var files = ['verbs.js', 'data/define.js', 'data/resources.js', 'data/a1a.js', 'data/a1b.js', 'data/a2a.js', 'data/a2b.js', 'data/b1a.js', 'data/b1b.js', 'data/b2a.js', 'data/b2b.js', 'data/c1.js', 'data/c2.js', 'data/decks1.js', 'data/decks2.js', 'data/decks3.js', 'data/decks4.js', 'data/decks5.js', 'data/migrate.js', 'config.js', 'core.js', 'ex.js', 'app.js'];
   window.CAMINO_MISSING = [];
   function load(src, done, retry) {
     var s = document.createElement('script'); s.src = src;
