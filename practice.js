@@ -86,7 +86,7 @@
     }
     return out;
   });
-  P.conjCtxEx = o => ({ type: 'cloze', card: o.id, q: o.e.pre + '___' + o.e.post, answers: [o.e.target], show: o.e.target, en: o.e.en, hint2: o.v.inf, say: o.e.es, sub: 'Conjugate in context · ' + o.v.inf + ' (' + TN[o.v.t] + (o.v.ambP ? '' : ', ' + PERS[o.v.p]) + ')', tag: 'Conjugación · ' + TN[o.v.t] });
+  P.conjCtxEx = o => ({ type: 'cloze', tense: o.v.t, card: o.id, q: o.e.pre + '___' + o.e.post, answers: [o.e.target], show: o.e.target, en: o.e.en, hint2: o.v.inf, say: o.e.es, sub: 'Conjugate in context · ' + o.v.inf + ' (' + TN[o.v.t] + (o.v.ambP ? '' : ', ' + PERS[o.v.p]) + ')', tag: 'Conjugación · ' + TN[o.v.t] });
 
   // ---------- tenses in a story: past verbs gapped in the graded readings ----------
   P.stories = memo(maxLv => {
@@ -168,8 +168,12 @@
   };
 
   // ---------- pools and workouts ----------
-  P.maxLv = () => Math.min(4, C.lvIdx(C.currentLevel()) + (C.S.settings.freeRoam ? 1 : 0));
-  P.blocks = (kind, maxLv) => C.PRACTICE.filter(b => b.kind === kind && lvOK(b.level, maxLv));
+  P.storiesOK = () => !C.tenseTaught || (C.tenseTaught('indef') && C.tenseTaught('impf'));
+  P.maxLv = () => Math.min(5, C.lvIdx(C.currentLevel()) + (C.S.settings.freeRoam ? 1 : 0));
+  // blocks written for one stage stay hidden until that stage's rule has been introduced
+  const ruleOK = b => !b.unit || !C.ruleSeen || C.ruleSeen(b.unit);
+  const taught = o => !C.tenseTaught || C.tenseTaught(o.v.t);
+  P.blocks = (kind, maxLv) => C.PRACTICE.filter(b => b.kind === kind && lvOK(b.level, maxLv) && ruleOK(b));
   P.ids = (kind, maxLv) => P.blocks(kind, maxLv).flatMap(b => b.ids);
   P.weakFirst = (ids, n) => {
     const fresh = ids.filter(id => !C.has(id)), due = ids.filter(id => C.has(id) && C.isDue(C.S.cards[id])), seen = ids.filter(id => C.has(id) && !C.isDue(C.S.cards[id])).sort((a, b) => C.retrievability(C.S.cards[a]) - C.retrievability(C.S.cards[b]));
@@ -180,8 +184,8 @@
     ['transform', 'Transformations', 'Rewrite sentences: tense changes, reported speech, passive, subjunctive', m => P.ids('transform', m).length],
     ['errors', 'Error hunt', 'Spot the one mistake in each sentence', m => P.ids('errors', m).length],
     ['contrast', 'Contrast pairs', 'ser/estar, por/para, indicative/subjunctive: with the reason why', m => P.ids('contrast', m).length],
-    ['tenses', 'Tenses in a story', 'Preterite or imperfect in real texts from the course', m => P.stories(m).length],
-    ['conjctx', 'Conjugation in context', 'The right verb form inside a real sentence', m => P.conjCtx(m).length],
+    ['tenses', 'Tenses in a story', 'Preterite or imperfect in real texts from the course', m => P.storiesOK() ? P.stories(m).length : 0],
+    ['conjctx', 'Conjugation in context', 'The right verb form inside a real sentence (tenses you have met)', m => P.conjCtx(m).filter(taught).length],
     ['colloc', 'Collocations', 'tomar, hacer or dar una decisión? Natural word partners', m => P.ids('colloc', m).length],
     ['wordbuild', 'Word building', 'cambiar → el cambio: nouns, verbs, adjectives from one root', m => P.ids('wordbuild', m).length],
     ['register', 'Register', 'Formal and colloquial alternatives', m => P.ids('register', m).length],
@@ -191,8 +195,8 @@
   P.workout = k => {
     const m = P.maxLv();
     if (['transform', 'errors', 'contrast', 'colloc', 'wordbuild', 'register'].includes(k)) return P.weakFirst(P.ids(k, m), 20).map(E.pEx);
-    if (k === 'tenses') return pick(P.stories(m), 3).map(P.storyEx);
-    if (k === 'conjctx') return pick(P.conjCtx(m), 20).map(P.conjCtxEx);
+    if (k === 'tenses') return P.storiesOK() ? pick(P.stories(m), 3).map(P.storyEx) : [];
+    if (k === 'conjctx') return pick(P.conjCtx(m).filter(taught), 20).map(P.conjCtxEx);
     if (k === 'dicto') return pick(P.paragraphs(m), 5).map(P.dictoEx);
     if (k === 'speed') return [{ type: 'speed', ids: shuffle(Object.keys(C.S.cards).filter(id => id[0] === 'v' && item(id))) }];
     if (k === 'weak') return P.weakItems(5, 24);
@@ -203,12 +207,12 @@
     const out = [];
     if (/^Conjugación · /.test(tag)) {
       const tn = tag.replace('Conjugación · ', ''), T = Verbs.TENSES.find(t => t.es === tn);
-      const ctx = P.conjCtx(4).filter(o => 'Conjugación · ' + TN[o.v.t] === tag);
+      const ctx = P.conjCtx(5).filter(o => 'Conjugación · ' + TN[o.v.t] === tag).filter(taught);
       pick(ctx, Math.ceil(n / 2)).forEach(o => out.push(P.conjCtxEx(o)));
       if (T) { const vs = Verbs.VERBS.slice(0, 60).map(v => v[0]); for (let i = out.length; i < n; i++) { try { out.push(E.conjEx(vs[Math.floor(Math.random() * vs.length)], T.id)); } catch (e) { } } }
       return out;
     }
-    if (tag === 'Indefinido o imperfecto') return pick(P.stories(4), 2).map(P.storyEx);
+    if (tag === 'Indefinido o imperfecto') return P.storiesOK() ? pick(P.stories(4), 2).map(P.storyEx) : [];
     const ids = Object.values(C.ITEMS).filter(x => E.tagOf(x.id) === tag).map(x => x.id);
     return P.weakFirst(ids, n).map(id => E.reviewEx(id) || E.pEx(id)).filter(Boolean);
   };
@@ -220,9 +224,11 @@
   // a few new-type items for a stage's own practice session
   P.forUnit = u => {
     const out = [], li = C.lvIdx(u.level);
-    const ctx = P.conjCtx(li).filter(o => item(o.id).src === u); pick(ctx, 2).forEach(o => out.push(P.conjCtxEx(o)));
+    const ctx = P.conjCtx(li).filter(o => item(o.id).src === u).filter(taught); pick(ctx, 2).forEach(o => out.push(P.conjCtxEx(o)));
     const kinds = ['transform', 'errors', 'contrast', 'colloc', 'wordbuild'];
-    kinds.forEach(kd => { const ids = C.PRACTICE.filter(b => b.kind === kd && b.level === u.level).flatMap(b => b.ids); pick(ids, 1).forEach(id => out.push(E.pEx(id))); });
+    // items written for this very stage come first, then one item per kind from the stage's level
+    const own = C.PRACTICE.filter(b => b.unit === u.id).flatMap(b => b.ids); pick(own, 4).forEach(id => out.push(E.pEx(id)));
+    kinds.forEach(kd => { const ids = C.PRACTICE.filter(b => b.kind === kd && b.level === u.level && b.unit !== u.id && ruleOK(b)).flatMap(b => b.ids); pick(ids, 1).forEach(id => out.push(E.pEx(id))); });
     return out.filter(Boolean);
   };
 })(window);

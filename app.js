@@ -4,7 +4,7 @@
   const { $, $$, esc } = C;
   const S = () => C.S;
   const A = G.App = {};
-  const ROUTES = ['today', 'camino', 'review', 'gym', 'exams', 'decks', 'verbs', 'library', 'tutor', 'progress', 'prefs', 'about'];
+  const ROUTES = ['today', 'camino', 'grammar', 'review', 'gym', 'exams', 'decks', 'verbs', 'library', 'tutor', 'progress', 'prefs', 'about'];
   let unitStep = {}; // remembered open step per unit (in memory)
   let readTab = {};  // remembered reading tab per unit
 
@@ -23,7 +23,7 @@
   A.go = r => { if (location.hash.slice(1) === r) A.render(); else location.hash = r; };
   addEventListener('hashchange', () => { if (!EX.isActive()) A.render(); window.scrollTo(0, 0); });
 
-  const views = () => ({ today: viewToday, camino: viewCamino, review: viewReview, gym: viewGym, exams: () => G.EXAMS.view(), decks: viewDecks, verbs: viewVerbs, library: viewLibrary, tutor: viewTutor, progress: viewProgress, prefs: viewSettings, about: viewAbout });
+  const views = () => ({ today: viewToday, camino: viewCamino, grammar: () => G.GRAM.view(), review: viewReview, gym: viewGym, exams: () => G.EXAMS.view(), decks: viewDecks, verbs: viewVerbs, library: viewLibrary, tutor: viewTutor, progress: viewProgress, prefs: viewSettings, about: viewAbout });
   A.render = () => {
     const r = A.route();
     $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + r || (r.startsWith('unit-') && a.getAttribute('href') === '#camino')));
@@ -36,7 +36,7 @@
     syncBadge();
   };
   const syncBadge = () => { const el = $('#syncstate'); if (el) { el.textContent = C.syncLabel(); el.dataset.s = C.syncState(); } };
-  const binders = {};
+  const binders = { grammar: () => G.GRAM.bind() };
   const link = (r, label, cls = 'btn') => `<a class="${cls}" href="#${r}">${label}</a>`;
   const minutesToday = () => { const d = C.dayRec(); return (d.t || 0) / 60 + (d.i || 0); };
   const nextStep = u => { const st = C.uState(u.id).steps; return C.STEPS.find(([k]) => !st[k]) || C.STEPS[8]; };
@@ -157,9 +157,9 @@
     if (k === 'grammar') {
       let conj = '';
       if (u.conj) { const t = Verbs.TENSES.find(t => t.id === u.conj.t); conj = `<h3>${esc(t.es)}: model verbs</h3><div class="scroll"><table class="conj"><thead><tr><th></th>${u.conj.v.slice(0, 5).map(v => `<th>${esc(v)}</th>`).join('')}</tr></thead><tbody>${[0, 1, 2, 3, 4, 5].map(p => `<tr><th>${esc(u.conj.t.startsWith('imp') && u.conj.t !== 'impf' && u.conj.t !== 'impsubj' ? ['—', 'tú', 'usted', 'nosotros', 'vosotros', 'ustedes'][p] : Verbs.PERS[p])}</th>${u.conj.v.slice(0, 5).map(v => { let f = '—'; try { f = Verbs.conj(v, u.conj.t)[p] || '—'; } catch (e) { } return `<td>${esc(f)}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`; }
-      return `<h2>${esc(u.grammar.t)}</h2><div class="grammar">${u.grammar.h}</div>${conj}<h3>In context</h3><ul class="examples">${u.sentences.map(([es, en]) => `<li><span class="es">${esc(es)}</span>${sayBtn(es)}<span class="en">${esc(en)}</span></li>`).join('')}</ul>
-      <div class="row"><button class="btn primary" data-mark="grammar">${us.steps.grammar ? 'Read ✓' : 'I\'ve read it'}</button>${u.conj ? '<a class="btn" href="#verbs">Drill these verbs</a>' : ''}</div>
-      <h3>Grammar drills in this stage</h3><ol class="drill-list">${u.drills.map(d => `<li><span lang="es">${esc(d[0]).replace(/_{3}(\s*_{3})*/, '<span class="gap">' + esc(d[1].split('|')[0]) + '</span>')}</span>${d[2] ? `<span class="muted"> · ${esc(d[2])}</span>` : ''}</li>`).join('')}</ol>`;
+      return `<p class="kicker">Step 1 · read this before the exercises</p><h2>${esc(u.grammar.t)}</h2><div class="grammar">${u.grammar.h}</div>${conj}<h3>In context</h3><ul class="examples">${u.sentences.map(([es, en]) => `<li><span class="es">${esc(es)}</span>${sayBtn(es)}<span class="en">${esc(en)}</span></li>`).join('')}</ul>
+      <div class="row"><button class="btn primary" data-mark="grammar">${us.steps.grammar ? 'Read ✓ · on to the words' : 'Got it · on to the words'}</button><a class="btn ghost" href="#grammar">All rules</a>${u.conj ? '<a class="btn" href="#verbs">Drill these verbs</a>' : ''}</div>
+      <h3>Worked examples (the drills of this stage, answered)</h3><ol class="drill-list">${u.drills.map(d => `<li><span lang="es">${esc(d[0]).replace(/_{3}(\s*_{3})*/, '<span class="gap">' + esc(d[1].split('|')[0]) + '</span>')}</span>${d[2] ? `<span class="muted"> · ${esc(d[2])}</span>` : ''}</li>`).join('')}</ol>`;
     }
     if (k === 'practice') return head('Practice', `${u.drills.length} grammar gaps (new ones first), ${u.conj ? 'conjugations, ' : ''}sentence building, translation, words in context, matching and el/la, plus cards from earlier stages. Every session is a fresh mix, so repeat it as often as you like.`) + `<div class="row wrap"><button class="btn primary" data-run="practice">${us.steps.practice ? 'Practise again' : 'Start practice'}</button><button class="btn" data-run="drills">All ${u.drills.length} grammar gaps</button></div>`;
     if (k === 'read') {
@@ -210,6 +210,8 @@
         speak: { title: 'Speaking · ' + u.title, items: EX.speakItems(u), graded: false, requeue: false },
         check: { title: 'Checkpoint · ' + u.title, items: EX.checkItems(u), requeue: false }
       }[m];
+      const pre = m !== 'check' && G.GRAM && G.GRAM.preface(u);
+      if (pre) cfg.items = [pre].concat(cfg.items || []);
       EX.run(Object.assign(cfg, {
         onDone: r => {
           if (m === 'check') {
@@ -247,8 +249,11 @@
         if (answered === rd.q.length) {
           const us = C.uState(u.id); us.reads[ti] = right / answered; C.save();
           C.toast(right + ' of ' + answered + ' right.');
-          const allDone = u.readings.every((_, i) => us.reads[i] != null);
-          setTimeout(() => { if (allDone) advance(u, 'read'); else { readTab[u.id] = u.readings.findIndex((_, i) => us.reads[i] == null); body.innerHTML = stepBody(u, 'read'); bindStep(u, 'read'); body.scrollIntoView({ behavior: 'smooth' }); } }, 1100);
+          setTimeout(() => {
+            if (!body.isConnected || (readTab[u.id] || 0) !== ti) return; // user already moved on
+            const nx = u.readings.findIndex((_, i) => us.reads[i] == null);
+            if (nx < 0) advance(u, 'read'); else { readTab[u.id] = nx; body.innerHTML = stepBody(u, 'read'); bindStep(u, 'read'); body.scrollIntoView({ behavior: 'smooth' }); }
+          }, 1100);
         }
       }));
     }
@@ -342,7 +347,7 @@
   function viewDecks() {
     const totalV = C.DECKS.reduce((n, d) => n + d.vids.length, 0), learned = C.DECKS.reduce((n, d) => n + C.learnedOf(d), 0);
     const lv = C.currentLevel(), nd = A.nextDeck();
-    return `<section class="band"><h1>Barajas</h1><p class="lead">${C.DECKS.length} thematic decks with ${C.fmtN(totalV)} extra words, each with an example sentence. Together with the stages that makes ${C.fmtN(C.VOCAB_TOTAL)} words: roughly what CEFR B2 expects. You have learned ${C.fmtN(learned)} deck words.</p>
+    return `<section class="band"><h1>Barajas</h1><p class="lead">${C.DECKS.length} thematic decks with ${C.fmtN(totalV)} extra words, each with an example sentence. Together with the stages that makes ${C.fmtN(C.VOCAB_TOTAL)} words, from everyday A1 basics to the specialist and literary vocabulary of C1–C2. You have learned ${C.fmtN(learned)} deck words.</p>
       <p class="muted">Tip: learn one batch from a deck most days, alongside your stage. New-word target: ${S().settings.newPerDay || 30} a day (today ${C.newToday()}). Words shared with a stage count once.</p>
       ${nd ? `<div class="row"><button class="btn primary" data-dl="${nd.id}">Continue: ${esc(nd.title)}</button></div>` : ''}</section>
     ${C.LEVELS.filter(l => C.DECKS.some(d => d.level === l.id)).map(l => `<section class="band decks-l"><h2>${l.id} · ${esc(l.name)}${C.lvIdx(l.id) > C.lvIdx(lv) ? ' <small class="muted">(ahead of your level)</small>' : ''}</h2><div class="decks">${C.DECKS.filter(d => d.level === l.id).map(d => {
@@ -362,12 +367,14 @@
   // ---------- VERBS ----------
   let vState = { tenses: ['pres'], verbs: 'core', verb: 'tener' };
   function viewVerbs() {
+    if (!vState.picked) { const ok = Verbs.TENSES.filter(x => C.tenseTaught(x.id)).map(x => x.id); vState.tenses = ok.length ? ok.slice(-3) : ['pres']; }
     const lv = C.currentLevel(), order = C.LEVELS.map(l => l.id);
     const t = Verbs.TENSES, v = vState.verb;
     let table = '';
     try { table = `<div class="scroll"><table class="conj full"><thead><tr><th></th>${t.map(x => `<th title="${esc(x.en)}">${esc(x.es)}</th>`).join('')}</tr></thead><tbody>${[0, 1, 2, 3, 4, 5].map(p => `<tr><th>${esc(Verbs.PERS[p])}</th>${t.map(x => `<td>${esc(Verbs.conj(v, x.id)[p] || '—')}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="muted">Gerundio <b>${esc(Verbs.gerund(v))}</b> · Participio <b>${esc(Verbs.participle(v))}</b>. Imperative rows: tú, usted, nosotros, vosotros, ustedes. Rare irregular verbs outside the core list may be off: check WordReference.</p>`; } catch (e) { table = '<p class="note">That doesn\'t look like a Spanish infinitive (-ar, -er, -ir).</p>'; }
     return `<section class="band"><h1>Verbos</h1><p class="lead">Conjugation is the backbone of Spanish. Drill the tenses you've met, with vosotros included.</p>
-      <div class="panel"><h2>Drill</h2><div class="chips" id="vt">${t.map(x => `<label class="chip ${order.indexOf(x.level) > order.indexOf(lv) ? 'later' : ''}"><input type="checkbox" value="${x.id}" ${vState.tenses.includes(x.id) ? 'checked' : ''}> ${esc(x.es)} <small>${x.level}</small></label>`).join('')}</div>
+      <div class="panel"><h2>Drill</h2><div class="chips" id="vt">${t.map(x => { const ok = C.tenseTaught(x.id); return `<label class="chip ${ok ? '' : 'later'}" title="${ok ? 'You have met this tense' : 'Not taught in your stages yet: the drill starts with an explanation'}"><input type="checkbox" value="${x.id}" ${vState.tenses.includes(x.id) ? 'checked' : ''}> ${esc(x.es)} <small>${ok ? '✓' : 'new · ' + x.level}</small></label>`; }).join('')}</div>
+      <p class="muted">Tenses marked <i>new</i> haven't come up in your stages yet: a drill on them starts with a short explanation of how the tense works. <a href="#grammar">How every tense works</a>.</p>
       <div class="row wrap"><label for="vset">Verbs</label><select id="vset"><option value="core" ${vState.verbs === 'core' ? 'selected' : ''}>Top 40 most frequent</option><option value="irr" ${vState.verbs === 'irr' ? 'selected' : ''}>Irregular & stem-changing</option><option value="all" ${vState.verbs === 'all' ? 'selected' : ''}>All ${Verbs.VERBS.length} verbs</option><option value="refl" ${vState.verbs === 'refl' ? 'selected' : ''}>Reflexive</option></select><select id="vn" aria-label="Number of questions"><option>20</option><option>40</option><option>60</option></select><button class="btn primary" id="vgo">Start drill</button></div></div>
       <div class="panel"><h2>Look up any verb</h2><div class="row"><input id="vq" list="vlist" value="${esc(v)}" lang="es" autocomplete="off" aria-label="Infinitive"><datalist id="vlist">${Verbs.VERBS.map(x => `<option value="${x[0]}">${esc(x[1])}</option>`).join('')}</datalist><button class="btn" id="vshow">Show</button></div>${table}</div></section>`;
   }
@@ -376,11 +383,11 @@
     $('#vq').onkeydown = e => { if (e.key === 'Enter') $('#vshow').click(); };
     $('#vgo').onclick = () => {
       const tenses = $$('#vt input:checked').map(i => i.value); if (!tenses.length) { C.toast('Pick at least one tense.'); return; }
-      vState.tenses = tenses; vState.verbs = $('#vset').value;
+      vState.tenses = tenses; vState.picked = true; vState.verbs = $('#vset').value;
       const IRR = 'ser estar ir tener hacer poder decir ver dar saber querer poner venir salir pensar volver pedir dormir conocer seguir jugar empezar sentir traer conducir oír leer construir elegir preferir morir caber haber andar'.split(' ');
       let pool = Verbs.VERBS.map(x => x[0]);
       if (vState.verbs === 'core') pool = pool.slice(0, 40); else if (vState.verbs === 'irr') pool = pool.filter(v => IRR.includes(v)); else if (vState.verbs === 'refl') pool = pool.filter(v => /se$/.test(v));
-      const items = [...Array(+$('#vn').value || 20)].map(() => { const v = pool[Math.floor(Math.random() * pool.length)], t = tenses[Math.floor(Math.random() * tenses.length)]; try { return EX.conjEx(v, t); } catch (e) { return null; } });
+      const items = tenses.map(t => G.GRAM.tensePreface(t)).filter(Boolean).concat([...Array(+$('#vn').value || 20)].map(() => { const v = pool[Math.floor(Math.random() * pool.length)], t = tenses[Math.floor(Math.random() * tenses.length)]; try { return EX.conjEx(v, t); } catch (e) { return null; } }));
       EX.run({ title: 'Verb drill', items, onDone: () => A.render() });
     };
   };
@@ -600,8 +607,8 @@ grant select, insert, update on public.camino_state to authenticated;`;
       <li><b>On claude.ai:</b> sync and the AI tutor work automatically.</li></ul>
     <p>Progress is stored in the browser you use. To use several devices, set up free Supabase sync or move backup files between them (Settings). Each address (claude.ai, your GitHub Pages site, a local file) keeps its own progress, so use backups to move between them.</p>
     <h2>Roadmap</h2><ul>
-      <li><b>Done:</b> standalone mode, optional Supabase sync, your-own-key AI tutor, browser speech recognition, ~4,000 words to B2.</li>
-      <li><b>Next:</b> installable PWA with offline mode, expanded C1–C2 stages to the same depth as A1–B2, graded stories library, DELE-style mock exams, recorded native audio.</li></ul></section>`;
+      <li><b>Done:</b> standalone mode, optional Supabase sync, your-own-key AI tutor, browser speech recognition, placement test, level exams and DELE-style mocks, ten practice types with a mistake notebook, all 87 stages from A1 to C2 at full depth (about 6,000 words), and rule-first teaching with a Grammar page and a 📖 Rule button in every exercise.</li>
+      <li><b>Next:</b> graded stories library and longer listening, daily speaking and a writing portfolio, installable app with offline mode.</li></ul></section>`;
   }
 
   // ---------- boot ----------

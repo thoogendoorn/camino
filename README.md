@@ -2,12 +2,13 @@
 
 A free, self-contained Spanish course for the browser: Castilian Spanish from A1 to C2, built around spaced repetition, lots of practice and real listening.
 
-* **67 stages** on the Camino de Santiago (A1–B2 in full depth, plus a first set of C1–C2 stages).
-* **About 3,900 words** with example sentences: 2,300 in the stages and 54 thematic decks for the rest, sized to what CEFR B2 expects.
+* **87 stages** on the Camino de Santiago, A1 to C2, all in the same depth: words with example sentences, grammar drills, key sentences and graded texts (C1–C2: 40 words, 20 drills and 3 texts per stage).
+* **About 6,000 words** with example sentences: 3,150 in the stages and 74 thematic decks for the rest, including 20 C1–C2 decks (academic, business, finance, medicine, law, literature, philosophy, history, idioms, slang, Latin expressions…).
 * **1,140 grammar drills, 450+ key sentences and 170+ graded readings** with tap-to-translate.
 * Exercises: multiple choice, typing, words in context, matching, el/la, listening quizzes, dictation, sentence building, translation, shadowing with speech recognition, conjugation in 15 tenses (vosotros included), writing with AI feedback, and role-play with an AI tutor.
 * **Exams:** an adaptive placement test, a level exam for A1–C1, and DELE-style mock exams (A1, A2, B1, B2, C1; two per level) with all four papers, timed and scored like the real thing. Writing and speaking are marked by you against the DELE criteria and a model answer; AI marking is optional.
-* **Practice (Entreno):** transformations, error hunt, contrast pairs, collocations, register, word building (about 780 hand-written items), plus conjugation in context, tenses in a story, dictogloss and a speed round built from the course texts.
+* **Rule first:** every stage opens with its grammar, and no session asks about a rule you haven't been shown: an unread rule appears as a card before the questions, verb forms you haven't met yet are explained on the word card and asked as a choice rather than typed, and the gender, tense and practice pools only use what you've been taught. A **📖 Rule** button in every exercise opens the rule behind the question, and the **Grammar** page lists every rule and all 15 tenses (use, formation, endings), searchable.
+* **Practice (Entreno):** transformations, error hunt, contrast pairs, collocations, register, word building (about 1,040 hand-written items from A1 to C2), plus conjugation in context, tenses in a story, dictogloss and a speed round built from the course texts.
 * **Mistake notebook:** every answer is filed under its grammar point or word topic; your weakest points get a 10-minute session.
 * An FSRS spaced-repetition scheduler, a free-practice page (Entreno), input-hour tracking with podcast links, streaks, stats and stamps.
 
@@ -104,12 +105,14 @@ ex.js          exercise types, sessions, workouts
 app.js         screens
 verbs.js       conjugation engine (15 tenses, ~120 verbs, vosotros)
 data/define.js content format and parsers
-data/a1a.js …  stages (A1–B2 in the compact text format; c1.js, c2.js in the older format)
+data/a1a.js …  stages in the compact text format (a1a … b2b, c1a–c1c, c2a–c2b)
+data/legacy-c.js  grammar notes and tasks of the original C1–C2 stages, reused by c1a.js and c2a/c2b.js
 data/decks*.js thematic word decks
 data/mock-*.js DELE-style mock exams (two per level)
-data/practice-*.js hand-written practice items
+data/practice-*.js hand-written practice items (A1–C2; an optional 4th argument ties a block to one stage)
 practice.js    new exercise types, workouts, mistake notebook
 exams.js       placement test, level exams, mock exams
+grammar.js     rule-first logic: Grammar page, rule sheet, form notes, tense explanations, what has been taught
 config.js      your own settings (built-in Supabase URL + publishable key)
 data/resources.js  podcast and video links
 data/migrate.js    upgrades progress saved by the first version

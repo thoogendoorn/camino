@@ -230,13 +230,30 @@ ul.tasks{list-style:none;padding:0;margin:6px 0}ul.tasks li{display:flex;justify
 @keyframes tin{from{transform:translateY(10px);opacity:0}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media(max-width:600px){table{font-size:14.5px}th,td{padding:6px 5px}.lead{font-size:17px}.sess-top{grid-template-columns:auto minmax(0,1fr) auto}.foot .btn{flex:1}.lvrow{grid-template-columns:36px 80px minmax(0,1fr) 40px}}
+
+/* rule first: rule sheet, form notes, grammar page */
+#rulesheet{position:fixed;inset:0;z-index:60}#rulesheet[hidden]{display:none}
+.rs-back{position:absolute;inset:0;background:rgba(15,23,42,.45)}
+.rs-panel{position:absolute;right:0;top:0;bottom:0;width:min(640px,100%);background:var(--bg);box-shadow:-8px 0 30px rgba(0,0,0,.18);display:flex;flex-direction:column}
+.rs-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}.rs-head h2{margin:0;font-size:22px}
+.rs-body{overflow:auto;padding:16px 20px 40px}
+.formnote{margin-top:14px;padding:10px 14px;border-left:4px solid var(--yel);background:var(--stone);border-radius:8px;font-size:15.5px;text-align:left}
+.rules{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+details.rule{border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+details.rule>summary{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;list-style:none}details.rule>summary::-webkit-details-marker{display:none}
+details.rule .rn{flex:none;min-width:34px;height:34px;border-radius:17px;background:var(--stone);display:grid;place-items:center;font-weight:700;font-size:13px}
+details.rule.seen .rn{background:var(--goodbg)}
+details.rule .rt{flex:1;min-width:0;display:flex;flex-direction:column}details.rule .rt small{color:var(--mut)}
+details.rule .rs{flex:none;color:var(--mut);font-size:13.5px}
+details.rule .rule-body{padding:4px 16px 16px;border-top:1px solid var(--line)}
+@media (max-width:640px){details.rule .rs{display:none}}
 </style>
 </head>
 <body>
 <header class="top">
   <a class="brand" href="#today"><span class="logo"><svg viewBox="0 0 40 40" aria-hidden="true"><g stroke="#f5b700" stroke-width="3" stroke-linecap="round" fill="none"><path d="M20 35L4 14M20 35L9 9M20 35L15 6M20 35V5M20 35L25 6M20 35L31 9M20 35L36 14"/><path d="M4 14C8 6 14 4 20 4s12 2 16 10"/></g></svg></span><span class="bt">Camino</span></a>
   <nav id="nav" aria-label="Main">
-    <a href="#today">Today</a><a href="#camino">Path</a><a href="#review">Review</a><a href="#gym">Practice</a><a href="#exams">Exams</a><a href="#decks">Decks</a><a href="#verbs">Verbs</a><a href="#library">Library</a><a href="#tutor">Tutor</a><a href="#progress">Progress</a><a href="#prefs">Settings</a>
+    <a href="#today">Today</a><a href="#camino">Path</a><a href="#grammar">Grammar</a><a href="#review">Review</a><a href="#gym">Practice</a><a href="#exams">Exams</a><a href="#decks">Decks</a><a href="#verbs">Verbs</a><a href="#library">Library</a><a href="#tutor">Tutor</a><a href="#progress">Progress</a><a href="#prefs">Settings</a>
   </nav>
   <span id="syncstate">Saved in this browser</span>
 </header>
@@ -246,7 +263,7 @@ ul.tasks{list-style:none;padding:0;margin:6px 0}ul.tasks li{display:flex;justify
 /* Loads the app in order. Course files are looked for in data/ first, then next to index.html,
    so the app also works if the data folder's files were uploaded without the folder. */
 (function () {
-  var files = ['verbs.js', 'data/define.js', 'data/resources.js', 'data/a1a.js', 'data/a1b.js', 'data/a2a.js', 'data/a2b.js', 'data/b1a.js', 'data/b1b.js', 'data/b2a.js', 'data/b2b.js', 'data/c1.js', 'data/c2.js', 'data/decks1.js', 'data/decks2.js', 'data/decks3.js', 'data/decks4.js', 'data/decks5.js', 'data/mock-a1.js', 'data/mock-a2.js', 'data/mock-b1.js', 'data/mock-b2.js', 'data/mock-c1.js', 'data/mock-a1b.js', 'data/mock-a2b.js', 'data/mock-b1b.js', 'data/mock-b2b.js', 'data/mock-c1b.js', 'data/practice-a1.js', 'data/practice-a2.js', 'data/practice-b1.js', 'data/practice-b2.js', 'data/practice-c1.js', 'data/practice-extra.js', 'data/migrate.js', 'config.js', 'core.js', 'ex.js', 'practice.js', 'exams.js', 'app.js'];
+  var files = ['verbs.js', 'data/define.js', 'data/resources.js', 'data/a1a.js', 'data/a1b.js', 'data/a2a.js', 'data/a2b.js', 'data/b1a.js', 'data/b1b.js', 'data/b2a.js', 'data/b2b.js', 'data/legacy-c.js', 'data/c1a.js', 'data/c1b.js', 'data/c1c.js', 'data/c2a.js', 'data/c2b.js', 'data/decks1.js', 'data/decks2.js', 'data/decks3.js', 'data/decks4.js', 'data/decks5.js', 'data/decks6.js', 'data/decks7.js', 'data/mock-a1.js', 'data/mock-a2.js', 'data/mock-b1.js', 'data/mock-b2.js', 'data/mock-c1.js', 'data/mock-a1b.js', 'data/mock-a2b.js', 'data/mock-b1b.js', 'data/mock-b2b.js', 'data/mock-c1b.js', 'data/practice-a1.js', 'data/practice-a2.js', 'data/practice-b1.js', 'data/practice-b2.js', 'data/practice-c1.js', 'data/practice-c1b.js', 'data/practice-c2.js', 'data/practice-extra.js', 'data/migrate.js', 'config.js', 'core.js', 'ex.js', 'practice.js', 'exams.js', 'grammar.js', 'app.js'];
   window.CAMINO_MISSING = [];
   function load(src, done, retry) {
     var s = document.createElement('script'); s.src = src;

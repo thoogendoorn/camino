@@ -27,18 +27,25 @@
     const x = item(id); if (!x) return null; const v = x.it, [es, en] = v, src = x.src;
     const ex = C.exOf(v) || fallbackExample(src, es);
     const pool = poolFor(src);
-    if (kind === 'intro') return { type: 'intro', es, en, ex };
+    if (kind === 'intro') return { type: 'intro', es, en, ex, note: G.GRAM ? G.GRAM.formNote(v) : '' };
     if (kind === 'mc-es') return { type: 'mc', card: id, prompt: es, say: es, sub: 'What does it mean?', options: shuffle([en].concat(distractors(en, pool, 3, 1))), answer: en, en };
     if (kind === 'mc-en') return { type: 'mc', card: id, prompt: en, sub: 'Choose the Spanish', options: shuffle([es].concat(distractors(es, pool, 3, 0))), answer: es, sayAnswer: true, en };
     if (kind === 'mc-listen') return C.canSpeak() ? { type: 'mc', card: id, listen: es, sub: 'Listen: what does it mean?', options: shuffle([en].concat(distractors(en, pool, 3, 1))), answer: en, reveal: es, en } : E.vocabEx(id, 'mc-es');
     if (kind === 'listen') return C.canSpeak() ? { type: 'type', card: id, listen: es, sub: 'Type the word you hear', answers: C.expand(es), show: es, en } : E.vocabEx(id, 'type');
     if (kind === 'context') {
       if (!ex || !ex.target) return E.vocabEx(id, 'type');
-      const q = ex.pre + '___' + ex.post;
-      return { type: 'cloze', card: id, q, answers: [ex.target], show: ex.target, en: ex.en, hint2: en, say: ex.es, sub: 'Complete the sentence' };
+      const q = ex.pre + '___' + ex.post, GR = G.GRAM, fi = GR ? GR.formInfo(v) : null, note = fi ? GR.formNote(v, false) : '';
+      if (fi && fi.kind === 'verb' && !GR.formTaught(fi)) {
+        // this form hasn't been taught yet: recognise it in a choice rather than build it
+        const others = (src.vids || []).filter(o => o !== id).map(o => { const e = C.exOf(item(o).it); return e && e.target && !/ /.test(e.target) ? e.target : null; }).filter(Boolean);
+        const opts = shuffle([ex.target].concat(shuffle(others.filter(o => C.norm(o) !== C.norm(ex.target))).slice(0, 3)));
+        if (opts.length >= 2) return { type: 'mc', card: id, prompt: q, promptEs: true, hideSay: true, sub: 'Which word fits? · ' + en, options: opts, answer: ex.target, say: ex.es, show: ex.es, en: ex.en, explain: note };
+        return E.vocabEx(id, 'type');
+      }
+      return { type: 'cloze', card: id, q, answers: [ex.target], show: ex.target, en: ex.en, hint2: en, say: ex.es, sub: fi ? 'Complete the sentence · use a form of «' + (fi.inf || fi.base) + '»' : 'Complete the sentence', explain: note };
     }
     if (kind === 'gender') {
-      const g = C.genderOf(es); if (!g) return E.vocabEx(id, 'type');
+      const g = C.genderOf(es), gu = G.GRAM && G.GRAM.teach().gender; if (!g || (gu && !C.ruleSeen(gu.id))) return E.vocabEx(id, 'mc-en');
       const noun = es.replace(/^(el|la)\s+/, '');
       return { type: 'mc', prompt: noun, say: es, sub: 'El or la? · ' + en, options: ['el', 'la'], answer: g, sayAnswer: false, gender: true, show: es, en };
     }
@@ -74,7 +81,7 @@
     const t = Verbs.TENSES.find(t => t.id === tense);
     const meaning = (Verbs.VERBS.find(v => v[0] === verb) || [])[1];
     const pl = tense === 'imp' || tense === 'impneg' ? ['—', 'tú', 'usted', 'nosotros', 'vosotros', 'ustedes'][p] : PERS[p];
-    return { type: 'type', prompt: verb + (meaning ? ' · ' + meaning : ''), sub: t.es + ' · ' + pl, answers: [forms[p]], show: forms[p], conj: true, tag: 'Conjugación · ' + t.es };
+    return { type: 'type', prompt: verb + (meaning ? ' · ' + meaning : ''), sub: t.es + ' · ' + pl, answers: [forms[p]], show: forms[p], conj: true, tense, tag: 'Conjugación · ' + t.es };
   };
   const conjItems = (u, n) => u.conj ? pick(u.conj.v.flatMap(v => [0, 1, 2, 3, 4, 5].map(p => [v, p])).filter(([v, p]) => { try { return Verbs.conj(v, u.conj.t)[p]; } catch (e) { return false; } }), n).map(([v, p]) => E.conjEx(v, u.conj.t, p)) : [];
   // pick the right exercise for a card by memory strength (desirable difficulty)
@@ -102,9 +109,15 @@
     const st = { items, i: 0, results: [], total: items.length, exam };
     active = st; EXAM = exam;
     let timer = null, left = seconds, timeUp = false;
-    root.innerHTML = `<div class="sess-top"><button class="btn ghost" id="sx">${esc(exitLabel)}</button><div class="sess-title">${esc(title)}</div><div class="sess-count"><span id="stimer" class="stimer" ${seconds ? '' : 'hidden'}></span> <span id="scount"></span> <button class="btn small ghost" id="srep" title="Report a problem with this question">⚑</button></div><div class="bar"><i id="sbar"></i></div><div id="repbox" hidden></div></div><div class="sess-body" id="sbody"></div>`;
+    root.innerHTML = `<div class="sess-top"><button class="btn ghost" id="sx">${esc(exitLabel)}</button><div class="sess-title">${esc(title)}</div><div class="sess-count"><span id="stimer" class="stimer" ${seconds ? '' : 'hidden'}></span> <span id="scount"></span> <button class="btn small ghost" id="srule" title="Show the rule this question practises">📖 Rule</button> <button class="btn small ghost" id="srep" title="Report a problem with this question">⚑</button></div><div class="bar"><i id="sbar"></i></div><div id="repbox" hidden></div></div><div class="sess-body" id="sbody"></div>`;
     $('#sx').onclick = () => finish(true);
     $('#srep').onclick = () => reportBox(title);
+    $('#srule').hidden = exam;
+    $('#srule').onclick = () => {
+      const r = G.GRAM && (G.GRAM.ruleFor(E._cur) || G.GRAM.ruleFor(st.items.find(i => i && i.card && C.ITEMS[i.card] && (C.ITEMS[i.card].src.grammar || C.ITEMS[i.card].t === 'p'))));
+      if (r) G.GRAM.sheet({ title: r.title, html: r.html });
+      else G.GRAM.sheet({ title: 'Grammar', html: '<p>This question is about vocabulary or understanding, not a specific grammar rule.</p><p class="muted">Every rule in the course is listed on the Grammar page.</p>' });
+    };
     const tick = () => { const el = $('#stimer'); if (!el) return; el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'); el.classList.toggle('warn', left <= 60); if (left <= 0) { timeUp = true; finish(false); } left--; };
     const startTimer = () => { if (seconds && !timer) { tick(); timer = setInterval(tick, 1000); } };
     const next = () => {
@@ -112,10 +125,14 @@
       if (st.i >= st.items.length) return finish(false);
       $('#sbar').style.width = (100 * st.i / Math.max(st.items.length, more ? st.i + 1 : 1)) + '%';
       $('#scount').textContent = more ? 'Question ' + (st.results.length + 1) : (st.i + 1) + ' / ' + st.items.length;
-      const ex = st.items[st.i]; E._cur = ex;
+      let ex = st.items[st.i];
+      const tip = !exam && G.GRAM && ex.type !== 'note' && G.GRAM.tipFor(ex);
+      if (tip) { st.items.splice(st.i, 0, tip); ex = tip; }
+      E._cur = ex;
       if (ex.type !== 'note') startTimer();
       $('#sbody').scrollTop = 0; root.scrollTop = 0;
       renderEx(ex, $('#sbody'), res => {
+        if (ex.onDone) try { ex.onDone(); } catch (e) { }
         if (ex.type !== 'intro' && ex.type !== 'speak' && ex.type !== 'note') {
           const pts = res.pts != null ? res.pts : (res.ok ? 1 : 0), max = res.max != null ? res.max : 1;
           st.results.push({ ex, ...res, pts, max });
@@ -213,6 +230,7 @@
     if (t === 'intro') {
       root.innerHTML = `<div class="ex intro"><div class="sub">New word</div><div class="prompt es">${esc(ex.es)}</div><div class="say-row">${speakBtn(ex.es)}</div><div class="meaning">${esc(ex.en)}</div>
         ${ex.ex ? `<div class="example"><span class="es">${ex.ex.target ? esc(ex.ex.pre) + '<u>' + esc(ex.ex.target) + '</u>' + esc(ex.ex.post) : esc(ex.ex.es)}</span> ${speakBtn(ex.ex.es, 'Listen to example')}<span class="en">${esc(ex.ex.en)}</span></div>` : ''}
+        ${ex.note ? `<div class="formnote">${ex.note}</div>` : ''}
         <div class="foot"><button class="btn primary" id="cont">Got it</button></div></div>`;
       bindSay(root); if (C.S.settings.autoplay) C.speak(ex.es);
       const key = e => { if (e.key === 'Enter') { document.removeEventListener('keydown', key); done({}); } };
@@ -358,6 +376,8 @@
     const fresh = E.newIds(src).slice(0, n);
     if (!fresh.length) return null;
     const items = [];
+    const pre = G.GRAM && src.grammar && G.GRAM.preface(src, 'This stage\'s words and example sentences use this rule. Read it first; the 📖 Rule button brings it back during the exercises.');
+    if (pre) items.push(pre);
     for (let k = 0; k < fresh.length; k += 5) {
       const chunk = fresh.slice(k, k + 5);
       chunk.forEach(id => items.push(E.vocabEx(id, 'intro')));
@@ -425,7 +445,7 @@
     const learnedV = Object.keys(C.S.cards).filter(id => id[0] === 'v' && item(id));
     return {
       units, learnedV,
-      drills: units.flatMap(u => u.dids),
+      drills: units.filter(u => !C.ruleSeen || C.ruleSeen(u.id)).flatMap(u => u.dids),
       sents: units.flatMap(u => u.sids),
       readings: units.flatMap(u => u.readings.map(r => [u, r]))
     };

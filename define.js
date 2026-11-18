@@ -28,5 +28,5 @@
   //   contrast:  sentence with [a/b] | answer | why          colloc / register: prompt with ___ | answer | distractor;distractor | English
   //   wordbuild: prompt | answer(a|b) | English
   C.practice = C.practice || [];
-  C.prac = (level, kind, tag) => items => { C.practice.push({ level, kind, tag, items }); };  // DELE-style mock exams (data/mock-*.js)
+  C.prac = (level, kind, tag, unit) => items => { C.practice.push({ level, kind, tag, unit, items }); };  // DELE-style mock exams (data/mock-*.js)
 })(typeof window !== 'undefined' ? window : globalThis);
