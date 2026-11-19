@@ -228,11 +228,11 @@
       return;
     }
     if (t === 'intro') {
-      root.innerHTML = `<div class="ex intro"><div class="sub">New word</div><div class="prompt es">${esc(ex.es)}</div><div class="say-row">${speakBtn(ex.es)}</div><div class="meaning">${esc(ex.en)}</div>
+      root.innerHTML = `<div class="ex intro"><div class="sub">New word</div><div class="prompt es">${esc(ex.es)}</div><div class="say-row">${speakBtn(ex.es)}${G.READER ? G.READER.nativeBtn(ex.es) : ''}</div><div class="meaning">${esc(ex.en)}</div>
         ${ex.ex ? `<div class="example"><span class="es">${ex.ex.target ? esc(ex.ex.pre) + '<u>' + esc(ex.ex.target) + '</u>' + esc(ex.ex.post) : esc(ex.ex.es)}</span> ${speakBtn(ex.ex.es, 'Listen to example')}<span class="en">${esc(ex.ex.en)}</span></div>` : ''}
         ${ex.note ? `<div class="formnote">${ex.note}</div>` : ''}
         <div class="foot"><button class="btn primary" id="cont">Got it</button></div></div>`;
-      bindSay(root); if (C.S.settings.autoplay) C.speak(ex.es);
+      bindSay(root); if (G.READER) G.READER.bindNative(root); if (C.S.settings.autoplay) C.speak(ex.es);
       const key = e => { if (e.key === 'Enter') { document.removeEventListener('keydown', key); done({}); } };
       setTimeout(() => document.addEventListener('keydown', key), 50);
       $('#cont', root).onclick = () => { document.removeEventListener('keydown', key); done({}); }; $('#cont', root).focus();

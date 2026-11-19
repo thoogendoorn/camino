@@ -19,19 +19,23 @@
   };
 
   // ---------- routing ----------
-  A.route = () => { const h = (location.hash || '').slice(1); if (/^unit-[a-z0-9-]+$/.test(h)) return h; return ROUTES.includes(h) ? h : 'today'; };
+  A.route = () => { const h = (location.hash || '').slice(1); if (/^(unit|story|culture)-[a-z0-9-]+$/.test(h)) return h; return ROUTES.includes(h) ? h : 'today'; };
   A.go = r => { if (location.hash.slice(1) === r) A.render(); else location.hash = r; };
   addEventListener('hashchange', () => { if (!EX.isActive()) A.render(); window.scrollTo(0, 0); });
 
   const views = () => ({ today: viewToday, camino: viewCamino, grammar: () => G.GRAM.view(), review: viewReview, gym: viewGym, exams: () => G.EXAMS.view(), decks: viewDecks, verbs: viewVerbs, library: viewLibrary, tutor: viewTutor, progress: viewProgress, prefs: viewSettings, about: viewAbout });
   A.render = () => {
     const r = A.route();
-    $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + r || (r.startsWith('unit-') && a.getAttribute('href') === '#camino')));
+    $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + r || (r.startsWith('unit-') && a.getAttribute('href') === '#camino') || (/^(story|culture)-/.test(r) && a.getAttribute('href') === '#library')));
     const main = $('#main');
     if (!C.UNITS.length) { const miss = (G.CAMINO_MISSING || []); main.innerHTML = `<section class="band"><h1>The course files didn't load</h1><p class="lead">Camino started, but found no lessons. ${miss.length ? 'These files are missing or could not be loaded:' : 'The <code>data</code> folder is probably missing.'}</p>${miss.length ? `<ul>${miss.map(f => `<li><code>${esc(f)}</code></li>`).join('')}</ul>` : ''}<p>Make sure the <code>data</code> folder (with all its files) sits next to <code>index.html</code>, then reload. On GitHub, drag the whole <code>data</code> folder from your file manager onto the upload page; the "choose your files" button can't select folders.</p></section>`; return; }
     try {
-      main.innerHTML = r.startsWith('unit-') ? viewUnit(r.slice(5)) : views()[r]();
-      (binders[r.startsWith('unit-') ? 'unit' : r] || (() => { }))(r.slice(5));
+      if (r.startsWith('story-')) { main.innerHTML = G.READER.storyView(r.slice(6)); G.READER.bindStory(r.slice(6)); }
+      else if (r.startsWith('culture-')) { main.innerHTML = G.READER.cultureView(r.slice(8)); G.READER.bindCulture(r.slice(8)); }
+      else {
+        main.innerHTML = r.startsWith('unit-') ? viewUnit(r.slice(5)) : views()[r]();
+        (binders[r.startsWith('unit-') ? 'unit' : r] || (() => { }))(r.slice(5));
+      }
     } catch (e) { console.error(e); main.innerHTML = `<section class="band"><h1>Something went wrong</h1><pre>${esc(e.stack || e)}</pre></section>`; }
     syncBadge();
   };
@@ -80,7 +84,7 @@
       <a class="plan-card ${due ? 'hot' : ''}" href="#review"><span class="pc-k">1 · Review</span><span class="pc-big">${due}</span><span class="pc-s">${due ? 'cards due · about ' + reviewMin + ' min' : 'Nothing due. ' + (rec.n ? rec.n + ' reviewed today.' : 'Come back tomorrow.')}</span></a>
       <a class="plan-card" href="#unit-${u.id}"><span class="pc-k">2 · Lesson</span><span class="pc-big small">${esc(u.title)}</span><span class="pc-s">Next: <b>${esc(sl)}</b> · ${esc(sd)}</span></a>
       <a class="plan-card" href="#decks"><span class="pc-k">3 · New words</span><span class="pc-big">${newN}<small>/${newT}</small></span><span class="pc-s">${dk ? 'Suggested deck: <b>' + esc(dk.title) + '</b> · ' + C.learnedOf(dk) + '/' + dk.vids.length : 'All decks learned'}</span></a>
-      <a class="plan-card" href="#library"><span class="pc-k">4 · Input</span><span class="pc-big">${Math.round(rec.i || 0)}<small>/${inputT} min</small></span><span class="pc-s">${esc((u.res[0] || {}).t || 'Listen to a podcast')}</span></a>
+      <a class="plan-card" href="${(() => { const s = G.READER && G.READER.todayPick(); return s ? '#story-' + s.id : '#library'; })()}"><span class="pc-k">4 · Input</span><span class="pc-big">${Math.round(rec.i || 0)}<small>/${inputT} min</small></span><span class="pc-s">${(() => { const s = G.READER && G.READER.todayPick(); return s ? 'Read: <b>' + esc(s.title) + '</b> · ' + s.min + ' min' : esc((u.res[0] || {}).t || 'Listen to a podcast'); })()}</span></a>
     </div>
     ${C.weakTags().length ? `<p class="note">Weak points this week: <b>${C.weakTags().slice(0, 3).map(t => esc(t.tag)).join('</b>, <b>')}</b>. <a href="#gym">Practise them for 10 minutes</a>.</p>` : ''}
     <div class="row wrap"><a class="btn primary" href="#unit-${u.id}">Continue stage ${u.n + 1}</a>${due ? '<a class="btn" href="#review">Start reviews</a>' : ''}<a class="btn" href="#gym">Extra practice</a>${C.ai.available() ? '<a class="btn" href="#tutor">Talk with the tutor</a>' : ''}</div></section>
@@ -276,7 +280,8 @@
     if (k === 'immerse') $$('[data-log]', body).forEach(b => b.onclick = () => { const r = u.res[+b.dataset.log]; logInput(r.m || 15, r.t, r.k); C.markStep(u.id, 'immerse'); b.textContent = 'Logged ✓'; b.disabled = true; setTimeout(() => advance(u, 'immerse'), 700); });
     const tk = $('[data-talk]', body); if (tk) tk.onclick = () => { A.tutorScenario = u.id; };
   }
-  function logInput(m, t, k) { S().input.unshift({ id: C.uid(), ts: Date.now(), d: C.today(), m: +m, t: t || 'Listening', k: k || 'listen' }); C.dayRec().i = (C.dayRec().i || 0) + (+m); C.save(); C.checkBadges(); C.toast('Logged ' + m + ' min of input.'); }
+  function logInput(m, t, k, auto) { S().input.unshift({ id: C.uid(), ts: Date.now(), d: C.today(), m: +m, t: t || 'Listening', k: k || 'listen', auto: auto ? 1 : 0 }); C.dayRec().i = (C.dayRec().i || 0) + (+m); C.save(); C.checkBadges(); C.toast((auto ? 'Logged automatically: ' : 'Logged ') + m + ' min of input.'); }
+  A.logInput = logInput;
 
   // ---------- REVIEW ----------
   function viewReview() {
@@ -350,6 +355,9 @@
     return `<section class="band"><h1>Barajas</h1><p class="lead">${C.DECKS.length} thematic decks with ${C.fmtN(totalV)} extra words, each with an example sentence. Together with the stages that makes ${C.fmtN(C.VOCAB_TOTAL)} words, from everyday A1 basics to the specialist and literary vocabulary of C1–C2. You have learned ${C.fmtN(learned)} deck words.</p>
       <p class="muted">Tip: learn one batch from a deck most days, alongside your stage. New-word target: ${S().settings.newPerDay || 30} a day (today ${C.newToday()}). Words shared with a stage count once.</p>
       ${nd ? `<div class="row"><button class="btn primary" data-dl="${nd.id}">Continue: ${esc(nd.title)}</button></div>` : ''}</section>
+    <section class="band decks-l"><h2>My words</h2>${C.MY.vids.length ? `<div class="decks"><div class="deck"><div class="deck-h"><div><b>Words you added</b><small>From stories, Living in Spain and podcast logs. Tap a word in any text and choose + My words.</small></div><span class="deck-n">${C.learnedOf(C.MY)}/${C.MY.vids.length}</span></div>${bar(C.learnedOf(C.MY) / C.MY.vids.length)}
+      <div class="row wrap">${C.learnedOf(C.MY) < C.MY.vids.length ? `<button class="btn small primary" id="mylearn">Learn ${Math.min(S().settings.batch || 10, C.MY.vids.length - C.learnedOf(C.MY))}</button>` : ''}${C.learnedOf(C.MY) ? '<button class="btn small" id="myprac">Practise</button>' : ''}<button class="btn small ghost" data-dw="my-words">${deckOpen === 'my-words' ? 'Hide' : 'Show'} words</button></div>
+      ${deckOpen === 'my-words' ? `<table class="vocab"><tbody>${(S().mywords || []).map((w, i) => `<tr><td lang="es"><b>${esc(w.es)}</b></td><td>${esc(w.en || '—')}${w.src ? `<div class="muted">${esc(w.src)}</div>` : ''}</td><td><button class="btn small ghost" data-mydel="${i}">Remove</button></td></tr>`).join('')}</tbody></table>` : ''}</div></div>` : '<p class="muted">Tap any word in a story or a Living in Spain text and choose <b>+ My words</b>; it becomes a card here with the sentence you found it in.</p>'}</section>
     ${C.LEVELS.filter(l => C.DECKS.some(d => d.level === l.id)).map(l => `<section class="band decks-l"><h2>${l.id} · ${esc(l.name)}${C.lvIdx(l.id) > C.lvIdx(lv) ? ' <small class="muted">(ahead of your level)</small>' : ''}</h2><div class="decks">${C.DECKS.filter(d => d.level === l.id).map(d => {
       const n = C.learnedOf(d), t = d.vids.length, done = n === t;
       return `<div class="deck ${done ? 'done' : ''}"><div class="deck-h"><div><b>${esc(d.title)}</b><small>${esc(d.desc || '')}</small></div><span class="deck-n">${n}/${t}</span></div>${bar(n / t)}
@@ -360,6 +368,9 @@
   binders.decks = () => {
     $$('[data-dl]').forEach(b => b.onclick = () => { const d = C.DECK[b.dataset.dl]; A.learn(d, d.title); });
     $$('[data-dp]').forEach(b => b.onclick = () => { const d = C.DECK[b.dataset.dp]; EX.run({ title: 'Practice · ' + d.title, items: EX.wordPractice(d.vids.filter(C.has), 25), onDone: () => A.render() }); });
+    const ml = $('#mylearn'); if (ml) ml.onclick = () => A.learn(C.MY, 'My words');
+    const mp = $('#myprac'); if (mp) mp.onclick = () => EX.run({ title: 'Practice · My words', items: EX.wordPractice(C.MY.vids.filter(C.has), 25), onDone: () => A.render() });
+    $$('[data-mydel]').forEach(b => b.onclick = () => { const w = (S().mywords || [])[+b.dataset.mydel]; if (!w) return; S().mywords.splice(+b.dataset.mydel, 1); G.READER.registerMyWords(); C.save(); A.render(); });
     $$('[data-dw]').forEach(b => b.onclick = () => { deckOpen = deckOpen === b.dataset.dw ? null : b.dataset.dw; const y = scrollY; A.render(); scrollTo(0, y); });
     bindSay($('#main'));
   };
@@ -398,7 +409,10 @@
     const ladder = [[50, 'Starting to follow slow, clear speech'], [150, 'Understand most learner podcasts'], [300, 'Follow native conversation on familiar topics'], [600, 'Comfortable with native-speed TV and podcasts'], [1000, 'Comfortable with daily conversation'], [1500, 'Native-like comprehension for most purposes']];
     const order = C.LEVELS.map(l => l.id);
     const levels = order.slice(Math.max(0, order.indexOf(lv) - 1), order.indexOf(lv) + 2);
-    return `<section class="band"><h1>Biblioteca</h1><p class="lead">Real Spanish, mostly from Spain, chosen for your level. Log what you listen to or read: input hours are the best predictor of comprehension.</p>
+    const RD = G.READER, tab = RD.tab();
+    const tabs = `<div class="seg libtabs" role="tablist">${[['stories', 'Lecturas'], ['listen', 'Escuchar'], ['culture', 'Vivir en España'], ['podcasts', 'Podcasts y registro']].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-libtab="${k}">${l}</button>`).join('')}</div>`;
+    if (tab !== 'podcasts') return `<section class="band story-head"><h1>Biblioteca</h1>${tabs}<p class="muted">Input logged: <b>${hrs.toFixed(1)} h</b> in total, ${Math.round(C.dayRec().i || 0)} min today.</p></section><section class="band" id="libbody">${tab === 'stories' ? RD.storiesHtml() : tab === 'listen' ? RD.listenHtml() : RD.cultureHtml()}</section>`;
+    return `<section class="band"><h1>Biblioteca</h1>${tabs}<p class="lead">Real Spanish, mostly from Spain, chosen for your level. Log what you listen to or read: input hours are the best predictor of comprehension.</p>
       <div class="ladder">${ladder.map(([h, d]) => `<div class="rung ${hrs >= h ? 'on' : ''}"><b>${h} h</b><span>${d}</span><i style="width:${Math.min(100, 100 * hrs / h)}%"></i></div>`).join('')}</div>
       <p class="muted">You have logged <b>${hrs.toFixed(1)} h</b> of input. Milestones follow the hour bands used by comprehensible-input programmes such as Dreaming Spanish.</p>
       <form class="panel logf" id="logf"><h2>Log listening or reading</h2><div class="row wrap"><input id="lt" placeholder="What did you listen to or read?" aria-label="Title"><select id="lk" aria-label="Type"><option value="listen">Podcast</option><option value="watch">Video / TV</option><option value="read">Reading</option><option value="speak">Conversation</option></select><input id="lm" type="number" min="1" max="600" value="15" aria-label="Minutes"><span>min</span><button class="btn primary">Log</button></div></form></section>
@@ -407,6 +421,8 @@
     <section class="band"><h2>Recent log</h2>${S().input.length ? `<table class="log"><tbody>${S().input.slice(0, 25).map(e => `<tr><td>${esc(e.d)}</td><td>${esc(e.t)}</td><td class="num">${e.m} min</td><td><button class="btn small ghost" data-del="${e.id}" aria-label="Delete">✕</button></td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nothing logged yet.</p>'}</section>`;
   }
   binders.library = () => {
+    $$('[data-libtab]').forEach(b => b.onclick = () => { G.READER.setTab(b.dataset.libtab); A.render(); });
+    if (G.READER.tab() !== 'podcasts') { G.READER.bindLibrary($('#main')); return; }
     $('#logf').onsubmit = e => { e.preventDefault(); const m = +$('#lm').value; if (!m) return; logInput(m, $('#lt').value.trim() || 'Input', $('#lk').value); A.render(); };
     $$('[data-lq]').forEach(b => b.onclick = () => { logInput(+b.dataset.lm, b.dataset.lq, b.dataset.lk); b.textContent = 'Logged ✓'; b.disabled = true; });
     $$('[data-del]').forEach(b => b.onclick = () => { const e = S().input.find(x => x.id === b.dataset.del); if (!e) return; S().input = S().input.filter(x => x !== e); const d = S().days[e.d]; if (d) d.i = Math.max(0, (d.i || 0) - e.m); C.save(); A.render(); });
@@ -421,17 +437,19 @@
       <p>Meanwhile, practise speaking with a real person:</p><ul class="res">${RES.global.filter(r => r.k === 'speak').map(r => `<li><a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.t)}</a></li>`).join('')}</ul></section>`;
     const cur = C.currentUnit(); const avail = C.UNITS.filter(u => u.n <= cur.n || C.isUnlocked(u));
     if (A.tutorScenario) { chat.scen = A.tutorScenario; chat.msgs = []; chat.mode = 'talk'; A.tutorScenario = null; }
-    if (!chat.scen || !C.UNIT[chat.scen]) chat.scen = cur.id;
+    const scenOf = id => C.UNIT[id] || (String(id).startsWith('c:') && C.CULT[id.slice(2)] ? Object.assign({ grammar: { t: 'everyday phrases for this situation' } }, C.CULT[id.slice(2)]) : null);
+    A.scenOf = scenOf;
+    if (!chat.scen || !scenOf(chat.scen)) chat.scen = cur.id;
     return `<section class="band tutor"><h1>Tutor</h1><p class="lead">Practise real conversation. Your tutor speaks Castilian Spanish at your level and corrects you gently. <small class="muted">Using: ${esc(C.ai.label())}</small></p>
       <div class="row wrap"><div class="seg" role="tablist">${[['talk', 'Role-play'], ['free', 'Free chat'], ['ask', 'Ask a question']].map(([k, l]) => `<button class="${chat.mode === k ? 'on' : ''}" data-mode="${k}">${l}</button>`).join('')}</div>
-      ${chat.mode === 'talk' ? `<select id="scen" aria-label="Scenario">${avail.map(u => `<option value="${u.id}" ${u.id === chat.scen ? 'selected' : ''}>${u.n + 1}. ${esc(u.title)}</option>`).join('')}</select>` : ''}<button class="btn ghost" id="treset">New conversation</button></div>
-      ${chat.mode === 'talk' ? `<p class="note">${esc(C.UNIT[chat.scen].talk)}</p>` : ''}
+      ${chat.mode === 'talk' ? `<select id="scen" aria-label="Scenario"><optgroup label="Stages">${avail.map(u => `<option value="${u.id}" ${u.id === chat.scen ? 'selected' : ''}>${u.n + 1}. ${esc(u.title)}</option>`).join('')}</optgroup><optgroup label="Living in Spain">${C.CULTURE.map(m => `<option value="c:${m.id}" ${'c:' + m.id === chat.scen ? 'selected' : ''}>${esc(m.title)}</option>`).join('')}</optgroup></select>` : ''}<button class="btn ghost" id="treset">New conversation</button></div>
+      ${chat.mode === 'talk' ? `<p class="note">${esc(scenOf(chat.scen).talk)}</p>` : ''}
       <div class="chat" id="chat">${chat.msgs.map(m => `<div class="msg ${m.role}">${m.role === 'assistant' ? C.md(m.content) : esc(m.content)}${m.role === 'assistant' && C.canSpeak() ? `<button class="btn icon say" data-sayc="${esc(m.content.split(/\n\s*\n|Correc/)[0])}" aria-label="Listen">${G.ICON.speaker}</button>` : ''}</div>`).join('') || `<div class="msg assistant empty">${chat.mode === 'ask' ? 'Ask anything about Spanish grammar, words or culture.' : 'Press Start, or just say hola.'}</div>`}</div>
       <form class="chat-in" id="chatf"><textarea id="cin" rows="2" lang="es" placeholder="${chat.mode === 'ask' ? 'Your question…' : 'Escribe en español…'}"></textarea>${C.dict ? `<button type="button" class="btn icon" id="cmic" aria-label="Dictate">${G.ICON.mic}</button>` : ''}<button class="btn primary">${chat.msgs.length || chat.mode === 'ask' ? 'Send' : 'Start'}</button></form></section>`;
   }
   function tutorPrompt() {
     const cur = C.currentUnit(), lv = cur.level;
-    const u = C.UNIT[chat.scen] || cur;
+    const u = (A.scenOf && A.scenOf(chat.scen)) || cur;
     const base = `You are "Lucía", a warm Spanish tutor from Madrid. Use Castilian Spanish (vosotros, Spain vocabulary, pretérito perfecto for today's events). The learner is a native Dutch/English speaker at CEFR ${lv}; they have studied up to "${cur.title}". Keep your Spanish at ${lv} level${['A1', 'A2'].includes(lv) ? ': short, simple sentences and present/near-past tenses' : ''}.`;
     if (chat.mode === 'ask') return base + ' The learner asks questions about Spanish. Answer in clear English with Spanish examples. Be concise and practical.';
     const scen = chat.mode === 'talk' ? `\nRole-play scenario: ${u.talk}\nTarget grammar: ${u.grammar.t}.\nUseful vocabulary: ${u.vocab.slice(0, 25).map(v => v[0]).join(', ')}.` : '\nHave a natural, friendly conversation on topics the learner chooses.';
@@ -513,6 +531,7 @@ grant select, insert, update on public.camino_state to authenticated;`;
         <label for="tts">Engine</label><select id="tts"><option value="auto" ${s.tts === 'auto' ? 'selected' : ''}>Auto</option><option value="browser" ${s.tts === 'browser' ? 'selected' : ''}>Browser voice</option>${C.cap.tts ? `<option value="claude" ${s.tts === 'claude' ? 'selected' : ''}>Claude voice</option>` : ''}</select>
         <label for="sr">Speed</label><input id="sr" type="range" min="0.6" max="1.2" step="0.05" value="${s.rate}"><button class="btn" id="stest">${G.ICON.speaker} Test</button></div>
         <label class="chk"><input type="checkbox" id="sa" ${s.autoplay ? 'checked' : ''}> Play audio automatically</label>
+        <label class="chk"><input type="checkbox" id="snat" ${s.nativeAudio ? 'checked' : ''}> Native recordings of single words (🎙 buttons; fetched online from Lingua Libre on Wikimedia Commons, CC BY-SA)</label>
         <p class="muted">Speech recognition: ${C.dict ? (C.dict.kind === 'claude' ? 'Claude dictation' : 'your browser (Web Speech)') : 'not available in this browser (use Chrome, Edge or Safari)'}.</p>
         ${vs.length ? '' : '<p class="note">No Spanish voice found in this browser. On Windows add "Spanish (Spain)" under Settings › Time & language › Speech; on macOS under System Settings › Accessibility › Spoken content; on Android install Google Speech Services.</p>'}</div>
       <div class="panel"><h2>Checking</h2><label class="chk"><input type="checkbox" id="sacc" ${s.strictAccents ? 'checked' : ''}> Count missing accents as wrong (otherwise "almost right")</label></div>
@@ -542,7 +561,7 @@ grant select, insert, update on public.camino_state to authenticated;`;
     const s = S().settings;
     const bind = (id, k, f = v => v, rerender) => { $('#' + id).onchange = e => { s[k] = f(e.target.type === 'checkbox' ? e.target.checked : e.target.value); C.save(); if (rerender) A.render(); }; };
     bind('sg', 'goal', v => Math.max(10, +v || 45)); bind('rc', 'reviewCap', v => Math.max(20, +v || 150)); bind('np', 'newPerDay', v => Math.max(5, +v || 30)); bind('bt', 'batch', v => +v || 10);
-    bind('fr', 'freeRoam'); bind('sv', 'voice'); bind('tts', 'tts'); bind('sr', 'rate', v => +v); bind('sa', 'autoplay'); bind('sacc', 'strictAccents');
+    bind('fr', 'freeRoam'); bind('sv', 'voice'); bind('tts', 'tts'); bind('sr', 'rate', v => +v); bind('sa', 'autoplay'); bind('snat', 'nativeAudio'); bind('sacc', 'strictAccents');
     bind('aim', 'ai', v => v, true); bind('aip2', 'aiProv', v => v, true);
     $('#stest').onclick = () => C.speak('Hola, ¿qué tal? Vamos a aprender español juntos.');
     const out = $('#aiout');
@@ -599,7 +618,7 @@ grant select, insert, update on public.camino_state to authenticated;`;
       <li><b>Explicit grammar, then lots of input.</b> Each stage has a rule explanation, 20 drills, key sentences, three graded readings and real podcast episodes. Input hours are tracked because comprehension grows with them.</li>
       <li><b>Output.</b> Dictation, shadowing, writing with feedback and role-play conversations close the loop.</li>
       <li><b>Curriculum.</b> Stages follow the Instituto Cervantes Plan Curricular levels; vocabulary is sized to CEFR expectations (about 4,000 words by B2).</li></ul>
-    <h2>A good daily routine (45 minutes)</h2><ol><li>Reviews first (10–20 min).</li><li>One or two lesson steps (10–15 min).</li><li>A batch of new words from the stage or a deck (5–10 min).</li><li>Listen to the stage's podcast or a video and log it (15+ min).</li><li>Twice a week: write a text or chat with the tutor. Use Entreno whenever you have spare minutes.</li></ol>
+    <h2>A good daily routine (45 minutes)</h2><ol><li>Reviews first (10–20 min).</li><li>One or two lesson steps (10–15 min).</li><li>A batch of new words from the stage or a deck (5–10 min).</li><li>Read or listen in the Library, or listen to the stage's podcast and log it (15+ min).</li><li>Twice a week: write a text or chat with the tutor. Use Entreno whenever you have spare minutes.</li></ol>
     <p>Realistic expectations: C1 typically takes well over 1,000 hours of total contact with the language. Keep the reviews running, read and listen every day, and the hours add up.</p>
     <h2>Running it yourself</h2><p>Camino is a plain folder of HTML and JavaScript with no build step and no server code. It runs:</p><ul>
       <li><b>From your computer:</b> unzip the folder and open <code>index.html</code> in Chrome, Edge, Firefox or Safari.</li>
@@ -607,8 +626,8 @@ grant select, insert, update on public.camino_state to authenticated;`;
       <li><b>On claude.ai:</b> sync and the AI tutor work automatically.</li></ul>
     <p>Progress is stored in the browser you use. To use several devices, set up free Supabase sync or move backup files between them (Settings). Each address (claude.ai, your GitHub Pages site, a local file) keeps its own progress, so use backups to move between them.</p>
     <h2>Roadmap</h2><ul>
-      <li><b>Done:</b> standalone mode, optional Supabase sync, your-own-key AI tutor, browser speech recognition, placement test, level exams and DELE-style mocks, ten practice types with a mistake notebook, all 87 stages from A1 to C2 at full depth (about 6,000 words), and rule-first teaching with a Grammar page and a 📖 Rule button in every exercise.</li>
-      <li><b>Next:</b> graded stories library and longer listening, daily speaking and a writing portfolio, installable app with offline mode.</li></ul></section>`;
+      <li><b>Done:</b> standalone mode, optional Supabase sync, your-own-key AI tutor, browser speech recognition, placement test, level exams and DELE-style mocks, ten practice types with a mistake notebook, all 87 stages from A1 to C2 at full depth (about 6,000 words), rule-first teaching with a Grammar page and a 📖 Rule button in every exercise, and a Library with 49 graded texts (A1–C1), a listening player and 21 Living in Spain modules.</li>
+      <li><b>Next:</b> more graded texts (towards 120), daily speaking and a writing portfolio, installable app with offline mode.</li></ul></section>`;
   }
 
   // ---------- boot ----------

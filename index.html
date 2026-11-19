@@ -213,7 +213,7 @@ code{background:var(--stone);padding:1px 5px;border-radius:5px}
 .speakbox{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--stone);border-radius:14px;padding:18px}.big-timer{font:700 56px/1 "Barlow Condensed",sans-serif;color:var(--blue);font-variant-numeric:tabular-nums}
 .xgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}.xcard{border:1.5px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}.xcard b{font:700 30px/1 "Barlow Condensed",sans-serif;color:var(--blue)}.xcard span{color:var(--mut);font-size:14.5px}.xcard.done{border-color:var(--blue);background:var(--goodbg)}
 .mocks{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}.mock{border:1.5px solid var(--line);border-radius:14px;padding:14px 16px}
-ul.tasks{list-style:none;padding:0;margin:6px 0}ul.tasks li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.muted.small{font-size:14px}ul.tasks{list-style:none;padding:0;margin:6px 0}ul.tasks li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
 .result{border-color:var(--blue);border-width:2px}.result h2{font-size:30px}
 .mchart{width:100%;max-width:700px;height:auto;margin:6px 0 14px}.mchart .passline{stroke:var(--yel);stroke-width:2;stroke-dasharray:6 5}.mchart .mline{fill:none;stroke:var(--blue);stroke-width:2.5}.mchart .mp{fill:var(--blue)}.mchart .mf{fill:var(--bg);stroke:var(--blue);stroke-width:2}.mchart .cl{fill:var(--mut);font:12px Barlow,sans-serif}
 .guide{margin:8px 0 14px;max-width:80ch}.guide dt{font-weight:700;margin-top:8px}.guide dd{margin:2px 0 0}
@@ -247,6 +247,29 @@ details.rule .rt{flex:1;min-width:0;display:flex;flex-direction:column}details.r
 details.rule .rs{flex:none;color:var(--mut);font-size:13.5px}
 details.rule .rule-body{padding:4px 16px 16px;border-top:1px solid var(--line)}
 @media (max-width:640px){details.rule .rs{display:none}}
+
+/* Phase 4: library, reader, player, Living in Spain */
+.libtabs{margin:6px 0 10px;flex-wrap:wrap}
+.story-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin:10px 0 22px}
+.story-card{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);text-decoration:none}
+.story-card:hover{border-color:var(--blue)}.story-card b{font-size:17px}
+.story-card .sc-k{font-size:12.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+.story-card .sc-s{color:var(--mut);font-size:14.5px}.story-card .sc-m{font-size:13px;color:var(--mut);margin-top:auto}
+.story-card.done{background:var(--goodbg)}
+.series h3{margin-bottom:0}
+.player{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--stone);margin:8px 0 14px;position:sticky;top:64px;z-index:5}
+.player .prate select{margin-left:4px}.player .keys{margin-left:auto}
+@media (max-width:640px){.player .keys{display:none}.player{top:56px}}
+.story-text p{line-height:1.75;font-size:19px}.story-text .sent.on{background:#fff2b8;border-radius:4px;box-shadow:0 0 0 3px #fff2b8}
+.story-text p.dlg .who{color:var(--blue)}
+.story-body{position:relative}.story-body .gloss{max-width:320px;flex-direction:column;align-items:flex-start;z-index:8}
+.gloss .addrow input{min-width:0;flex:1}
+.gloss[hidden]{display:none}table.vocab td:last-child{white-space:nowrap}
+.story-head{padding-bottom:4px}.story-head+.band{padding-top:6px}
+.story-body .gloss .row{display:flex;flex-wrap:wrap;gap:6px;margin:0}.story-body .gloss .btn{width:auto;min-height:34px;padding:4px 10px;border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:14px}.story-body .gloss .btn.primary{background:var(--yel);color:var(--ink);border-color:var(--yel)}.story-body .gloss a.btn{color:var(--bg)}
+.model .story-text p{font-size:17.5px;margin:6px 0}
+.muted.small{font-size:14px}ul.tasks{list-style:none;padding:0}ul.tasks li{padding:8px 0;border-bottom:1px solid var(--line)}ul.tasks label{display:flex;gap:10px;align-items:flex-start}
+.panel.small{padding:10px 14px;margin:8px 0}
 </style>
 </head>
 <body>
@@ -263,7 +286,7 @@ details.rule .rule-body{padding:4px 16px 16px;border-top:1px solid var(--line)}
 /* Loads the app in order. Course files are looked for in data/ first, then next to index.html,
    so the app also works if the data folder's files were uploaded without the folder. */
 (function () {
-  var files = ['verbs.js', 'data/define.js', 'data/resources.js', 'data/a1a.js', 'data/a1b.js', 'data/a2a.js', 'data/a2b.js', 'data/b1a.js', 'data/b1b.js', 'data/b2a.js', 'data/b2b.js', 'data/legacy-c.js', 'data/c1a.js', 'data/c1b.js', 'data/c1c.js', 'data/c2a.js', 'data/c2b.js', 'data/decks1.js', 'data/decks2.js', 'data/decks3.js', 'data/decks4.js', 'data/decks5.js', 'data/decks6.js', 'data/decks7.js', 'data/mock-a1.js', 'data/mock-a2.js', 'data/mock-b1.js', 'data/mock-b2.js', 'data/mock-c1.js', 'data/mock-a1b.js', 'data/mock-a2b.js', 'data/mock-b1b.js', 'data/mock-b2b.js', 'data/mock-c1b.js', 'data/practice-a1.js', 'data/practice-a2.js', 'data/practice-b1.js', 'data/practice-b2.js', 'data/practice-c1.js', 'data/practice-c1b.js', 'data/practice-c2.js', 'data/practice-extra.js', 'data/migrate.js', 'config.js', 'core.js', 'ex.js', 'practice.js', 'exams.js', 'grammar.js', 'app.js'];
+  var files = ['verbs.js', 'data/define.js', 'data/resources.js', 'data/a1a.js', 'data/a1b.js', 'data/a2a.js', 'data/a2b.js', 'data/b1a.js', 'data/b1b.js', 'data/b2a.js', 'data/b2b.js', 'data/legacy-c.js', 'data/c1a.js', 'data/c1b.js', 'data/c1c.js', 'data/c2a.js', 'data/c2b.js', 'data/decks1.js', 'data/decks2.js', 'data/decks3.js', 'data/decks4.js', 'data/decks5.js', 'data/decks6.js', 'data/decks7.js', 'data/mock-a1.js', 'data/mock-a2.js', 'data/mock-b1.js', 'data/mock-b2.js', 'data/mock-c1.js', 'data/mock-a1b.js', 'data/mock-a2b.js', 'data/mock-b1b.js', 'data/mock-b2b.js', 'data/mock-c1b.js', 'data/practice-a1.js', 'data/practice-a2.js', 'data/practice-b1.js', 'data/practice-b2.js', 'data/practice-c1.js', 'data/practice-c1b.js', 'data/practice-c2.js', 'data/practice-extra.js', 'data/reader-a1.js', 'data/reader-a1b.js', 'data/reader-a2.js', 'data/reader-a2b.js', 'data/reader-b1.js', 'data/reader-b2.js', 'data/reader-c1.js', 'data/culture1.js', 'data/culture2.js', 'data/migrate.js', 'config.js', 'core.js', 'ex.js', 'practice.js', 'exams.js', 'grammar.js', 'reader.js', 'app.js'];
   window.CAMINO_MISSING = [];
   function load(src, done, retry) {
     var s = document.createElement('script'); s.src = src;

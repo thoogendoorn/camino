@@ -74,6 +74,12 @@
     u.dids = u.drills.map(d => addItem(C.did(d[0]), 'd', d, u));
   });
   C.DECKS.forEach(d => { d.vids = d.vocab.map(v => addItem(C.vid(v[0]), 'v', v, d)); });
+  // Living in Spain modules: their 15 words are cards like deck words
+  C.CULTURE = (CM.cult || []).slice().sort((a, b) => C.lvIdx(a.level) - C.lvIdx(b.level));
+  C.CULT = {}; C.CULTURE.forEach((m, i) => { m.vocab = P.V(m.V); m.n = i; m.culture = true; m.vids = m.vocab.map(v => addItem(C.vid(v[0]), 'v', v, m)); C.CULT[m.id] = m; });
+  // My words: cards the learner adds from texts (registered once the saved state is known)
+  C.MY = { id: 'my-words', title: 'My words', level: 'A1', deck: true, mine: true, vocab: [], vids: [] };
+  C.addItem = addItem;
   C.PRACTICE = (CM.practice || []).map((b, i) => {
     b.n = i; b.title = b.tag;
     b.rows = String(b.items || '').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#')).map(l => l.split(' | ').map(f => f.trim()));
@@ -83,7 +89,7 @@
   C.cardItem = id => C.ITEMS[id] || null;
   C.MOCKS = ((CM.mocks) || []).slice().sort((a, b) => C.lvIdx(a.level) - C.lvIdx(b.level) || String(a.id).localeCompare(b.id));
   C.MOCK = {}; C.MOCKS.forEach(m => C.MOCK[m.id] = m);
-  C.VOCAB_TOTAL = Object.values(C.ITEMS).filter(x => x.t === 'v').length;
+  C.VOCAB_TOTAL = Object.values(C.ITEMS).filter(x => x.t === 'v' && x.src !== C.MY).length;
 
   C.STEPS = [
     ['grammar', 'Rule', 'Start here: the grammar, explained'],
@@ -99,7 +105,7 @@
 
   // ---------- state ----------
   const blankSettings = () => ({ goal: 45, rate: 0.95, voice: '', tts: 'auto', autoplay: true, strictAccents: false, reviewCap: 150, batch: 10, newPerDay: 30, freeRoam: false, ai: 'auto', aiProv: 'anthropic', aiModel: '' });
-  const blank = () => ({ v: 2, updated: 0, created: Date.now(), settings: blankSettings(), units: {}, cards: {}, days: {}, input: [], writing: {}, badges: {}, tutorChats: 0, lastBackup: 0, exams: [], reports: [], tags: {}, speedBest: 0, rulesRead: {}, tensesRead: {}, tips: {} });
+  const blank = () => ({ v: 2, updated: 0, created: Date.now(), settings: blankSettings(), units: {}, cards: {}, days: {}, input: [], writing: {}, badges: {}, tutorChats: 0, lastBackup: 0, exams: [], reports: [], tags: {}, speedBest: 0, rulesRead: {}, tensesRead: {}, tips: {}, stories: {}, cultureTasks: {}, mywords: [] });
   C.blank = blank;
   C.S = blank();
   function load() {
@@ -311,7 +317,8 @@
     if (m.days) for (const k in m.days) { const r = m.days[k], l = S.days[k] || {}; S.days[k] = { t: Math.max(l.t || 0, r.t || 0), i: Math.max(l.i || 0, r.i || 0), n: Math.max(l.n || 0, r.n || 0), c: Math.max(l.c || 0, r.c || 0), w: Math.max(l.w || 0, r.w || 0), v: Math.max(l.v || 0, r.v || 0) }; }
     if (m.input) { const ids = new Set(S.input.map(e => e.id)); m.input.forEach(e => { if (!ids.has(e.id)) S.input.push(e); }); S.input.sort((a, b) => b.ts - a.ts); }
     if (m.badges) S.badges = Object.assign({}, m.badges, S.badges);
-    ['rulesRead', 'tensesRead', 'tips'].forEach(k => { if (m[k]) S[k] = Object.assign({}, m[k], S[k] || {}); });
+    ['rulesRead', 'tensesRead', 'tips', 'stories', 'cultureTasks'].forEach(k => { if (m[k]) S[k] = Object.assign({}, m[k], S[k] || {}); });
+    if (m.mywords) { const have = new Set((S.mywords || []).map(w => w.es)); S.mywords = (S.mywords || []).concat(m.mywords.filter(w => !have.has(w.es))); }
     if (m.writing) for (const rk in m.writing) { const k = mu(rk), r = m.writing[rk], l = S.writing[k]; if (!l || (r.ts || 0) > (l.ts || 0)) S.writing[k] = r; }
     if (m.settings && (m.updated || 0) > (S.updated || 0)) S.settings = Object.assign(S.settings, m.settings);
     S.tutorChats = Math.max(S.tutorChats || 0, m.tutorChats || 0);
@@ -322,7 +329,7 @@
     S.speedBest = Math.max(S.speedBest || 0, m.speedBest || 0);
     if (m.reports) { S.reports = S.reports || []; const ks = new Set(S.reports.map(r => r.ts)); m.reports.forEach(r => { if (!ks.has(r.ts)) S.reports.push(r); }); }
   };
-  C.metaOf = S => ({ rulesRead: S.rulesRead, tensesRead: S.tensesRead, tips: S.tips, units: S.units, days: S.days, input: S.input.slice(0, 1500), badges: S.badges, writing: S.writing, settings: S.settings, updated: S.updated, created: S.created, tutorChats: S.tutorChats, lastBackup: S.lastBackup, exams: (S.exams || []).slice(0, 300), reports: (S.reports || []).slice(0, 200), tags: S.tags || {}, speedBest: S.speedBest || 0 });
+  C.metaOf = S => ({ stories: S.stories, cultureTasks: S.cultureTasks, mywords: S.mywords, rulesRead: S.rulesRead, tensesRead: S.tensesRead, tips: S.tips, units: S.units, days: S.days, input: S.input.slice(0, 1500), badges: S.badges, writing: S.writing, settings: S.settings, updated: S.updated, created: S.created, tutorChats: S.tutorChats, lastBackup: S.lastBackup, exams: (S.exams || []).slice(0, 300), reports: (S.reports || []).slice(0, 200), tags: S.tags || {}, speedBest: S.speedBest || 0 });
 
   // ---------- sync route 1: claude.ai artifact storage (private per person) ----------
   const SHARDS = 16;

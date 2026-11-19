@@ -10,6 +10,10 @@ A free, self-contained Spanish course for the browser: Castilian Spanish from A1
 * **Rule first:** every stage opens with its grammar, and no session asks about a rule you haven't been shown: an unread rule appears as a card before the questions, verb forms you haven't met yet are explained on the word card and asked as a choice rather than typed, and the gender, tense and practice pools only use what you've been taught. A **📖 Rule** button in every exercise opens the rule behind the question, and the **Grammar** page lists every rule and all 15 tenses (use, formation, endings), searchable.
 * **Practice (Entreno):** transformations, error hunt, contrast pairs, collocations, register, word building (about 1,040 hand-written items from A1 to C2), plus conjugation in context, tenses in a story, dictogloss and a speed round built from the course texts.
 * **Mistake notebook:** every answer is filed under its grammar point or word topic; your weakest points get a 10-minute session.
+* **Library (Biblioteca):** 49 original graded texts from A1 to C1 (about 22,000 words): five serials told in chapters (a year in Madrid, a flatshare comedy, a mystery on the Camino, a Galician family house, a translator's secret), portraits and biographies, city portraits, easy news, history, essays and short fiction. Every word is tappable for its meaning, with a button to add it to **My words** (a personal deck on the Decks page). Each text has 5–6 comprehension questions, and the reading time is logged as input automatically.
+* **Listening:** a sentence-by-sentence player with speed control, highlighting, two voices for dialogues, **Listen first** mode (text hidden until you choose to see it) and keyboard control: Space play/pause, R or ← repeat the last sentence, → next sentence. A guided worksheet for any podcast episode logs minutes, a summary and the words you caught.
+* **Living in Spain (Vivir en España):** 21 modules on everyday life: the GP and the health card, the pharmacy, renting, the padrón, NIE/TIE, banking, the tax return, contracts and payslips, school, tú or usted, mealtimes, markets, regional food, fiestas, public transport, 112, Correos, the residents' association, the driving licence, recycling, phone and internet. Each has a text, 15 words, a model conversation to listen to and shadow, a role-play for the AI tutor (or a no-AI way to practise it) and a checklist of real tasks.
+* **Native recordings (optional):** with **Native recordings** switched on in Settings, word cards and the tap-to-translate popup offer a recording by a native speaker from Lingua Libre (Wikimedia Commons, CC BY-SA) when one exists. This needs internet; without it the browser voice is used.
 * An FSRS spaced-repetition scheduler, a free-practice page (Entreno), input-hour tracking with podcast links, streaks, stats and stamps.
 
 No build step, no server code and no account needed.
@@ -91,7 +95,7 @@ The key is stored only in your browser's local storage, is never included in bac
 1. **Review** everything due (10–20 min).
 2. One or two **lesson steps** of your current stage (10–15 min).
 3. A **batch of new words** from the stage or a deck (5–10 min).
-4. **Listen** to the stage's podcast or a video and log the minutes (15+ min).
+4. **Read or listen** in the Library (a graded text at your level logs itself), or listen to the stage's podcast and log it with the worksheet (15+ min).
 5. Use **Practice** (Entreno) whenever you have spare minutes; write or chat with the tutor twice a week.
 
 Settings let you change the daily goal, words per batch, the new-word target per day, and **free roam** (open every stage without checkpoints).
@@ -113,6 +117,9 @@ data/practice-*.js hand-written practice items (A1–C2; an optional 4th argumen
 practice.js    new exercise types, workouts, mistake notebook
 exams.js       placement test, level exams, mock exams
 grammar.js     rule-first logic: Grammar page, rule sheet, form notes, tense explanations, what has been taught
+reader.js      library: graded reader, listening player, Living in Spain modules, My words, native recordings
+data/reader-*.js  graded texts (A1–C1)
+data/culture*.js  Living in Spain modules
 config.js      your own settings (built-in Supabase URL + publishable key)
 data/resources.js  podcast and video links
 data/migrate.js    upgrades progress saved by the first version
@@ -132,6 +139,8 @@ la palabra | word | Esta {palabra} es difícil. | This word is difficult.
 * `D` drills: `sentence with ___ | answer (alternatives a|b) | English`
 * `S` key sentences: `spanish | english`
 * `R` readings: `[{ t: 'Title', x: 'Text', q: 'Question | wrong ; *right ; wrong' }]`
+
+Graded texts: `CAMINO.story({ id, level, title, genre, blurb, series, ch, x: 'text', q: 'Question | wrong ; *right ; wrong', gl: 'word = meaning' })`. Lines that start with `Name: ` are read as dialogue in two voices. Living in Spain modules: `CAMINO.culture({ id, level, title, blurb, x, V, model, talk, tasks: [...], gl })`.
 
 Practice blocks: `CAMINO.prac('B1', 'errors', 'Por y para')(\`wrong sentence | correct sentence | why\`)`. Formats for every kind are listed in `data/define.js`.
 

@@ -28,5 +28,13 @@
   //   contrast:  sentence with [a/b] | answer | why          colloc / register: prompt with ___ | answer | distractor;distractor | English
   //   wordbuild: prompt | answer(a|b) | English
   C.practice = C.practice || [];
-  C.prac = (level, kind, tag, unit) => items => { C.practice.push({ level, kind, tag, unit, items }); };  // DELE-style mock exams (data/mock-*.js)
+  C.prac = (level, kind, tag, unit) => items => { C.practice.push({ level, kind, tag, unit, items }); };
+  // Graded reader (data/reader-*.js): { id, level, title, genre, series?, ch?, blurb, x: text (blank line = new paragraph;
+  //   "Name: line" = dialogue line), q: questions as in R above, gl: "word = meaning" per line (story glossary) }
+  C.stories = C.stories || [];
+  C.story = s => { C.stories.push(s); };
+  // Living in Spain (data/culture*.js): { id, level, title, blurb, x: reading, V: 15 words (unit format),
+  //   model: "Name: line" dialogue, talk: role-play scenario for the tutor, tasks: [real-world tasks] }
+  C.cult = C.cult || [];
+  C.culture = m => { C.cult.push(m); };  // DELE-style mock exams (data/mock-*.js)
 })(typeof window !== 'undefined' ? window : globalThis);
