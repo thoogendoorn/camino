@@ -264,7 +264,37 @@ details.rule .rule-body{padding:4px 16px 16px;border-top:1px solid var(--line)}
 .story-text p.dlg .who{color:var(--blue)}
 .story-body{position:relative}.story-body .gloss{max-width:320px;flex-direction:column;align-items:flex-start;z-index:8}
 .gloss .addrow input{min-width:0;flex:1}
-.gloss[hidden]{display:none}table.vocab td:last-child{white-space:nowrap}
+.gloss[hidden]{display:none}
+/* Phase 5: speaking and writing studio */
+.st-kpis{margin:10px 0}@media(max-width:600px){.st-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}.st-kpis>div{padding:10px 12px}.st-kpis b{font-size:28px}}.st-kpis b small{font-size:22px;color:var(--mut)}
+.trend ul{margin:4px 0 8px 20px}.trend li{margin:3px 0}.tr{font-weight:600;font-size:14px;color:var(--mut)}.tr.down{color:var(--good)}.tr.up{color:var(--bad)}
+.seg.tmodes{flex-wrap:wrap;max-width:100%}
+.talk-today h2,.talk-run h2,.talk-rev h2{font-size:clamp(22px,3vw,28px);margin:.2em 0}
+.phrases{columns:2 16em;margin:6px 0 10px 20px}.phrases li{margin:2px 0;break-inside:avoid}
+.linkish{background:none;border:0;padding:0;color:var(--blue);font:inherit;text-decoration:underline;cursor:pointer;text-align:left}
+.talklog,.tlist{margin:6px 0 10px 20px}.talklog li,.tlist li{margin:5px 0}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;margin:10px 0;color:var(--mut)}.stats b{color:var(--ink);font-size:20px}
+.fxrows{display:grid;gap:8px;margin:8px 0}
+.fxrow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1fr) minmax(0,12em) auto;gap:6px;align-items:center}
+.fxrow input,.fxrow select{min-width:0;width:100%}
+@media(max-width:760px){.fxrow{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}.fxrow .fx-y,.fxrow .fx-tag{grid-column:1/-1}.fxrow .fx-x{grid-column:3;justify-self:end}}
+.fxlist{margin:6px 0 10px 20px}.fxlist li{margin:6px 0}.fxlist s{color:var(--bad)}
+.tagchip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:0 8px;font-size:12.5px;color:var(--mut)}
+.bandtab{border-collapse:collapse;margin:8px 0;width:100%;max-width:72ch}.bandtab th,.bandtab td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}.bandtab th{white-space:nowrap}
+.bandpill{display:inline-block;border-radius:999px;padding:1px 10px;font-weight:700;font-size:14px;white-space:nowrap;background:var(--stone)}.bandpill.b3{background:var(--goodbg);color:var(--good)}.bandpill.b0,.bandpill.b1{background:var(--badbg);color:var(--bad)}
+.story-card.here{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+button.story-card{font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+.ptab{border-collapse:collapse;width:100%}.ptab th,.ptab td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}.ptab th{color:var(--mut);font-weight:600;font-size:14px}
+@media(max-width:600px){.ptab th:nth-child(2),.ptab td:nth-child(2),.ptab th:nth-child(4),.ptab td:nth-child(4){display:none}}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,18em),1fr));gap:12px 24px}
+.pwords{display:flex;flex-wrap:wrap;gap:8px}.pgroup{display:inline-flex;gap:4px;padding:4px;border:1px dashed var(--line);border-radius:12px}
+.big-word{font:700 44px/1.1 Barlow,sans-serif;margin:10px 0}
+.twl li{margin:10px 0}.twout{margin-top:6px}.tw-w{display:inline-block;margin:0 2px;padding:0 3px;border-radius:5px}.tw-w.ok{background:var(--goodbg)}.tw-w.miss{background:var(--badbg);text-decoration:underline wavy var(--bad)}
+.pfb{margin-top:12px;min-height:1.5em}
+.studio-today a{font-weight:600}
+#wtx{width:100%;min-height:16em;font-size:17px;line-height:1.55}
+.checks{list-style:none;padding:0}.checks .chk{align-items:flex-start}
+.btn.danger{border-color:var(--bad);color:var(--bad)}table.vocab td:last-child{white-space:nowrap}
 .story-head{padding-bottom:4px}.story-head+.band{padding-top:6px}
 .story-body .gloss .row{display:flex;flex-wrap:wrap;gap:6px;margin:0}.story-body .gloss .btn{width:auto;min-height:34px;padding:4px 10px;border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:14px}.story-body .gloss .btn.primary{background:var(--yel);color:var(--ink);border-color:var(--yel)}.story-body .gloss a.btn{color:var(--bg)}
 .model .story-text p{font-size:17.5px;margin:6px 0}
@@ -276,7 +306,7 @@ details.rule .rule-body{padding:4px 16px 16px;border-top:1px solid var(--line)}
 <header class="top">
   <a class="brand" href="#today"><span class="logo"><svg viewBox="0 0 40 40" aria-hidden="true"><g stroke="#f5b700" stroke-width="3" stroke-linecap="round" fill="none"><path d="M20 35L4 14M20 35L9 9M20 35L15 6M20 35V5M20 35L25 6M20 35L31 9M20 35L36 14"/><path d="M4 14C8 6 14 4 20 4s12 2 16 10"/></g></svg></span><span class="bt">Camino</span></a>
   <nav id="nav" aria-label="Main">
-    <a href="#today">Today</a><a href="#camino">Path</a><a href="#grammar">Grammar</a><a href="#review">Review</a><a href="#gym">Practice</a><a href="#exams">Exams</a><a href="#decks">Decks</a><a href="#verbs">Verbs</a><a href="#library">Library</a><a href="#tutor">Tutor</a><a href="#progress">Progress</a><a href="#prefs">Settings</a>
+    <a href="#today">Today</a><a href="#camino">Path</a><a href="#grammar">Grammar</a><a href="#review">Review</a><a href="#gym">Practice</a><a href="#studio">Speak &amp; write</a><a href="#exams">Exams</a><a href="#decks">Decks</a><a href="#verbs">Verbs</a><a href="#library">Library</a><a href="#tutor">Tutor</a><a href="#progress">Progress</a><a href="#prefs">Settings</a>
   </nav>
   <span id="syncstate">Saved in this browser</span>
 </header>
@@ -286,7 +316,7 @@ details.rule .rule-body{padding:4px 16px 16px;border-top:1px solid var(--line)}
 /* Loads the app in order. Course files are looked for in data/ first, then next to index.html,
    so the app also works if the data folder's files were uploaded without the folder. */
 (function () {
-  var files = ['verbs.js', 'data/define.js', 'data/resources.js', 'data/a1a.js', 'data/a1b.js', 'data/a2a.js', 'data/a2b.js', 'data/b1a.js', 'data/b1b.js', 'data/b2a.js', 'data/b2b.js', 'data/legacy-c.js', 'data/c1a.js', 'data/c1b.js', 'data/c1c.js', 'data/c2a.js', 'data/c2b.js', 'data/decks1.js', 'data/decks2.js', 'data/decks3.js', 'data/decks4.js', 'data/decks5.js', 'data/decks6.js', 'data/decks7.js', 'data/mock-a1.js', 'data/mock-a2.js', 'data/mock-b1.js', 'data/mock-b2.js', 'data/mock-c1.js', 'data/mock-a1b.js', 'data/mock-a2b.js', 'data/mock-b1b.js', 'data/mock-b2b.js', 'data/mock-c1b.js', 'data/practice-a1.js', 'data/practice-a2.js', 'data/practice-b1.js', 'data/practice-b2.js', 'data/practice-c1.js', 'data/practice-c1b.js', 'data/practice-c2.js', 'data/practice-extra.js', 'data/reader-a1.js', 'data/reader-a1b.js', 'data/reader-a1c.js', 'data/reader-a2.js', 'data/reader-a2b.js', 'data/reader-a2c.js', 'data/reader-b1.js', 'data/reader-b1b.js', 'data/reader-b2.js', 'data/reader-b2b.js', 'data/reader-c1.js', 'data/reader-c1b.js', 'data/culture1.js', 'data/culture2.js', 'data/migrate.js', 'config.js', 'core.js', 'ex.js', 'practice.js', 'exams.js', 'grammar.js', 'reader.js', 'app.js'];
+  var files = ['verbs.js', 'data/define.js', 'data/resources.js', 'data/a1a.js', 'data/a1b.js', 'data/a2a.js', 'data/a2b.js', 'data/b1a.js', 'data/b1b.js', 'data/b2a.js', 'data/b2b.js', 'data/legacy-c.js', 'data/c1a.js', 'data/c1b.js', 'data/c1c.js', 'data/c2a.js', 'data/c2b.js', 'data/decks1.js', 'data/decks2.js', 'data/decks3.js', 'data/decks4.js', 'data/decks5.js', 'data/decks6.js', 'data/decks7.js', 'data/mock-a1.js', 'data/mock-a2.js', 'data/mock-b1.js', 'data/mock-b2.js', 'data/mock-c1.js', 'data/mock-a1b.js', 'data/mock-a2b.js', 'data/mock-b1b.js', 'data/mock-b2b.js', 'data/mock-c1b.js', 'data/practice-a1.js', 'data/practice-a2.js', 'data/practice-b1.js', 'data/practice-b2.js', 'data/practice-c1.js', 'data/practice-c1b.js', 'data/practice-c2.js', 'data/practice-extra.js', 'data/reader-a1.js', 'data/reader-a1b.js', 'data/reader-a1c.js', 'data/reader-a2.js', 'data/reader-a2b.js', 'data/reader-a2c.js', 'data/reader-b1.js', 'data/reader-b1b.js', 'data/reader-b2.js', 'data/reader-b2b.js', 'data/reader-c1.js', 'data/reader-c1b.js', 'data/culture1.js', 'data/culture2.js', 'data/talk-a.js', 'data/talk-b.js', 'data/talk-c.js', 'data/writing-types.js', 'data/pron.js', 'data/migrate.js', 'config.js', 'core.js', 'ex.js', 'practice.js', 'exams.js', 'grammar.js', 'reader.js', 'studio.js', 'app.js'];
   window.CAMINO_MISSING = [];
   function load(src, done, retry) {
     var s = document.createElement('script'); s.src = src;

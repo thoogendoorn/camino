@@ -4,7 +4,7 @@
   const { $, $$, esc } = C;
   const S = () => C.S;
   const A = G.App = {};
-  const ROUTES = ['today', 'camino', 'grammar', 'review', 'gym', 'exams', 'decks', 'verbs', 'library', 'tutor', 'progress', 'prefs', 'about'];
+  const ROUTES = ['today', 'camino', 'grammar', 'review', 'gym', 'studio', 'exams', 'decks', 'verbs', 'library', 'tutor', 'progress', 'prefs', 'about'];
   let unitStep = {}; // remembered open step per unit (in memory)
   let readTab = {};  // remembered reading tab per unit
 
@@ -23,7 +23,7 @@
   A.go = r => { if (location.hash.slice(1) === r) A.render(); else location.hash = r; };
   addEventListener('hashchange', () => { if (!EX.isActive()) A.render(); window.scrollTo(0, 0); });
 
-  const views = () => ({ today: viewToday, camino: viewCamino, grammar: () => G.GRAM.view(), review: viewReview, gym: viewGym, exams: () => G.EXAMS.view(), decks: viewDecks, verbs: viewVerbs, library: viewLibrary, tutor: viewTutor, progress: viewProgress, prefs: viewSettings, about: viewAbout });
+  const views = () => ({ today: viewToday, camino: viewCamino, grammar: () => G.GRAM.view(), studio: () => G.STUDIO.view(), review: viewReview, gym: viewGym, exams: () => G.EXAMS.view(), decks: viewDecks, verbs: viewVerbs, library: viewLibrary, tutor: viewTutor, progress: viewProgress, prefs: viewSettings, about: viewAbout });
   A.render = () => {
     const r = A.route();
     $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + r || (r.startsWith('unit-') && a.getAttribute('href') === '#camino') || (/^(story|culture)-/.test(r) && a.getAttribute('href') === '#library')));
@@ -40,7 +40,7 @@
     syncBadge();
   };
   const syncBadge = () => { const el = $('#syncstate'); if (el) { el.textContent = C.syncLabel(); el.dataset.s = C.syncState(); } };
-  const binders = { grammar: () => G.GRAM.bind() };
+  const binders = { grammar: () => G.GRAM.bind(), studio: () => G.STUDIO.bind() };
   const link = (r, label, cls = 'btn') => `<a class="${cls}" href="#${r}">${label}</a>`;
   const minutesToday = () => { const d = C.dayRec(); return (d.t || 0) / 60 + (d.i || 0); };
   const nextStep = u => { const st = C.uState(u.id).steps; return C.STEPS.find(([k]) => !st[k]) || C.STEPS[8]; };
@@ -86,6 +86,7 @@
       <a class="plan-card" href="#decks"><span class="pc-k">3 · New words</span><span class="pc-big">${newN}<small>/${newT}</small></span><span class="pc-s">${dk ? 'Suggested deck: <b>' + esc(dk.title) + '</b> · ' + C.learnedOf(dk) + '/' + dk.vids.length : 'All decks learned'}</span></a>
       <a class="plan-card" href="${(() => { const s = G.READER && G.READER.todayPick(); return s ? '#story-' + s.id : '#library'; })()}"><span class="pc-k">4 · Input</span><span class="pc-big">${Math.round(rec.i || 0)}<small>/${inputT} min</small></span><span class="pc-s">${(() => { const s = G.READER && G.READER.todayPick(); return s ? 'Read: <b>' + esc(s.title) + '</b> · ' + s.min + ' min' : esc((u.res[0] || {}).t || 'Listen to a podcast'); })()}</span></a>
     </div>
+    ${G.STUDIO ? G.STUDIO.todayLine() : ''}
     ${C.weakTags().length ? `<p class="note">Weak points this week: <b>${C.weakTags().slice(0, 3).map(t => esc(t.tag)).join('</b>, <b>')}</b>. <a href="#gym">Practise them for 10 minutes</a>.</p>` : ''}
     <div class="row wrap"><a class="btn primary" href="#unit-${u.id}">Continue stage ${u.n + 1}</a>${due ? '<a class="btn" href="#review">Start reviews</a>' : ''}<a class="btn" href="#gym">Extra practice</a>${C.ai.available() ? '<a class="btn" href="#tutor">Talk with the tutor</a>' : ''}</div></section>
     <section class="band"><h2>This week</h2>${weekStrip()}<div class="kpis">
@@ -429,22 +430,43 @@
   };
 
   // ---------- TUTOR ----------
-  let chat = { mode: 'talk', scen: null, msgs: [], busy: false };
+  let chat = { mode: 'talk', scen: null, msgs: [], busy: false, opt: {}, fb: null };
+  const TMODES = [['talk', 'Role-play'], ['debate', 'Debate'], ['interview', 'Job interview'], ['phone', 'Phone call'], ['retell', 'Retell a story'], ['free', 'Free chat'], ['ask', 'Ask a question']];
+  const DEBATES = ['Las ciudades deberían prohibir los coches privados en el centro.', 'La semana laboral debería ser de cuatro días.', 'Los deberes en primaria deberían prohibirse.', 'Las redes sociales deberían estar prohibidas para menores de dieciséis años.', 'El turismo masivo hace más mal que bien a las ciudades.', 'Votar debería ser obligatorio.', 'Los colegios públicos deberían tener uniforme.', 'Es mejor vivir en un pueblo que en una gran ciudad.', 'La inteligencia artificial destruirá más empleos de los que creará.', 'Los museos deberían ser gratuitos.', 'Habría que eliminar los exámenes finales en la universidad.', 'Comer carne debería costar más, con un impuesto especial.'];
+  const JOBS = ['camarero o camarera en un restaurante de Madrid', 'recepcionista en un hotel de Barcelona', 'profesor o profesora de idiomas en una academia', 'programador o programadora en una empresa tecnológica', 'enfermero o enfermera en un hospital', 'dependiente o dependienta en una tienda de ropa', 'becario o becaria en una empresa de marketing', 'guía turístico en Sevilla'];
+  const CALLS = [['medico', 'Pedir cita en el centro de salud', 'You are the receptionist at a Spanish health centre answering the phone. The learner calls to make an appointment. Ask for their name (ask them to spell the surname), their health card number or date of birth, what the problem is and when they can come. Offer two times. Speak like on the phone: short turns, confirm details back.'], ['casero', 'Llamar al casero por una avería', 'You are a landlord or landlady in Spain answering a phone call from your tenant (the learner) about a problem in the flat (for example the boiler or a leak). Ask what exactly happens and since when, and arrange a time for a technician. Be a little reluctant at first.'], ['restaurante', 'Reservar mesa en un restaurante', 'You are answering the phone at a busy restaurant in Spain. The learner wants to book a table. Ask for the day, time, number of people, name and phone number; the time they ask for is full, so offer alternatives. Mention one allergy question.'], ['internet', 'Reclamar a la compañía de internet', 'You are a customer service agent of a Spanish phone and internet company. The learner calls because their internet does not work. Ask for their ID number (NIE/DNI) letter by letter, troubleshoot (router lights, restart) and finally book a technician visit.'], ['taxi', 'Pedir un taxi y dar indicaciones', 'You are a taxi dispatcher in Madrid answering the phone. Ask where the learner is exactly (street, number, landmark), where they are going, how many people and whether they have luggage. Give the waiting time and the car number.']];
+  A.tutorMode = null;
   function viewTutor() {
     if (!C.ai.available()) return `<section class="band"><h1>Tutor</h1><p class="lead">The AI tutor gives conversation practice, writing feedback and "Why?" explanations.</p>
       <p>It works in two ways: automatically when this page is opened on claude.ai, or anywhere (GitHub Pages, your own computer) with <b>your own API key</b> from Anthropic or OpenAI. Typical cost is a few cents per hour of chatting.</p>
       <div class="row"><a class="btn primary" href="#prefs">Set up the tutor</a></div>
       <p>Meanwhile, practise speaking with a real person:</p><ul class="res">${RES.global.filter(r => r.k === 'speak').map(r => `<li><a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.t)}</a></li>`).join('')}</ul></section>`;
     const cur = C.currentUnit(); const avail = C.UNITS.filter(u => u.n <= cur.n || C.isUnlocked(u));
-    if (A.tutorScenario) { chat.scen = A.tutorScenario; chat.msgs = []; chat.mode = 'talk'; A.tutorScenario = null; }
+    if (A.tutorScenario) { chat.scen = A.tutorScenario; chat.msgs = []; chat.mode = 'talk'; chat.fb = null; A.tutorScenario = null; }
+    if (A.tutorMode) { chat.mode = A.tutorMode; chat.msgs = []; chat.fb = null; A.tutorMode = null; }
+    const R2 = G.READER; const storyPool = R2 ? R2.STORIES.filter(st => R2.isRead(st.id)).concat(R2.STORIES.filter(st => !R2.isRead(st.id) && Math.abs(C.lvIdx(st.level) - C.lvIdx(cur.level)) <= 1)) : [];
+    if (chat.mode === 'debate' && !chat.opt.debate) chat.opt.debate = DEBATES[0];
+    if (chat.mode === 'interview' && !chat.opt.job) chat.opt.job = JOBS[0];
+    if (chat.mode === 'phone' && !chat.opt.call) chat.opt.call = CALLS[0][0];
+    if (chat.mode === 'retell' && (!chat.opt.story || !R2.STORY[chat.opt.story]) && storyPool.length) chat.opt.story = storyPool[0].id;
     const scenOf = id => C.UNIT[id] || (String(id).startsWith('c:') && C.CULT[id.slice(2)] ? Object.assign({ grammar: { t: 'everyday phrases for this situation' } }, C.CULT[id.slice(2)]) : null);
     A.scenOf = scenOf;
     if (!chat.scen || !scenOf(chat.scen)) chat.scen = cur.id;
     return `<section class="band tutor"><h1>Tutor</h1><p class="lead">Practise real conversation. Your tutor speaks Castilian Spanish at your level and corrects you gently. <small class="muted">Using: ${esc(C.ai.label())}</small></p>
-      <div class="row wrap"><div class="seg" role="tablist">${[['talk', 'Role-play'], ['free', 'Free chat'], ['ask', 'Ask a question']].map(([k, l]) => `<button class="${chat.mode === k ? 'on' : ''}" data-mode="${k}">${l}</button>`).join('')}</div>
+      <div class="row wrap"><div class="seg tmodes" role="tablist">${TMODES.map(([k, l]) => `<button class="${chat.mode === k ? 'on' : ''}" data-mode="${k}">${l}</button>`).join('')}</div>
+      ${chat.mode === 'debate' ? `<select id="topt" data-k="debate" aria-label="Motion" lang="es">${DEBATES.map(d => `<option ${d === chat.opt.debate ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>` : ''}
+      ${chat.mode === 'interview' ? `<select id="topt" data-k="job" aria-label="Job" lang="es">${JOBS.map(d => `<option ${d === chat.opt.job ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>` : ''}
+      ${chat.mode === 'phone' ? `<select id="topt" data-k="call" aria-label="Call" lang="es">${CALLS.map(([k, t]) => `<option value="${k}" ${k === chat.opt.call ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>` : ''}
+      ${chat.mode === 'retell' ? (storyPool.length ? `<select id="topt" data-k="story" aria-label="Story" lang="es">${storyPool.slice(0, 80).map(st => `<option value="${st.id}" ${st.id === chat.opt.story ? 'selected' : ''}>${st.level} · ${esc(st.title)}${R2.isRead(st.id) ? ' ✓' : ''}</option>`).join('')}</select>` : '') : ''}
       ${chat.mode === 'talk' ? `<select id="scen" aria-label="Scenario"><optgroup label="Stages">${avail.map(u => `<option value="${u.id}" ${u.id === chat.scen ? 'selected' : ''}>${u.n + 1}. ${esc(u.title)}</option>`).join('')}</optgroup><optgroup label="Living in Spain">${C.CULTURE.map(m => `<option value="c:${m.id}" ${'c:' + m.id === chat.scen ? 'selected' : ''}>${esc(m.title)}</option>`).join('')}</optgroup></select>` : ''}<button class="btn ghost" id="treset">New conversation</button></div>
       ${chat.mode === 'talk' ? `<p class="note">${esc(scenOf(chat.scen).talk)}</p>` : ''}
+      ${chat.mode === 'debate' ? `<p class="note">Say whether you agree with the motion; the tutor argues the other side, asks you to justify and pushes back. Use connectors to argue (en primer lugar, sin embargo, por consiguiente…).${C.lvIdx(cur.level) < 3 ? ' Debates work best from B2; the tutor will keep it simple for you.' : ''}</p>` : ''}
+      ${chat.mode === 'interview' ? `<p class="note">A job interview in Spain, with usted. The interviewer asks one question at a time: experience, strengths, a difficult situation, why this job. At the end, ask for feedback.</p>` : ''}
+      ${chat.mode === 'phone' ? `<p class="note">${esc((CALLS.find(c => c[0] === chat.opt.call) || CALLS[0])[1])}: a phone call, so no gestures to help. Spell names, confirm numbers and times. Tip: switch on reading replies aloud in Settings and use the microphone.</p>` : ''}
+      ${chat.mode === 'retell' ? (chat.opt.story && R2.STORY[chat.opt.story] ? `<p class="note">Retell <a href="#story-${chat.opt.story}">${esc(R2.STORY[chat.opt.story].title)}</a> in your own words. The tutor knows the text, asks what happened and why, and then asks for your opinion.</p>` : '<p class="note">Read a story in the Library first.</p>') : ''}
       <div class="chat" id="chat">${chat.msgs.map(m => `<div class="msg ${m.role}">${m.role === 'assistant' ? C.md(m.content) : esc(m.content)}${m.role === 'assistant' && C.canSpeak() ? `<button class="btn icon say" data-sayc="${esc(m.content.split(/\n\s*\n|Correc/)[0])}" aria-label="Listen">${G.ICON.speaker}</button>` : ''}</div>`).join('') || `<div class="msg assistant empty">${chat.mode === 'ask' ? 'Ask anything about Spanish grammar, words or culture.' : 'Press Start, or just say hola.'}</div>`}</div>
+      ${chat.fb ? `<div class="panel small" id="tfbox"><h3>Feedback on this conversation</h3>${chat.fb.html}${chat.fb.saved ? '<p class="muted">Corrections saved.</p>' : chat.fb.list && chat.fb.list.length ? '<button class="btn small primary" id="tfsave">Save the ticked corrections</button>' : ''}</div>` : ''}
+      ${chat.mode !== 'ask' && chat.msgs.filter(m => m.role === 'user').length >= 2 && !chat.busy ? `<div class="row"><button class="btn small" id="tfeed">Finish and get feedback</button></div>` : ''}
       <form class="chat-in" id="chatf"><textarea id="cin" rows="2" lang="es" placeholder="${chat.mode === 'ask' ? 'Your question…' : 'Escribe en español…'}"></textarea>${C.dict ? `<button type="button" class="btn icon" id="cmic" aria-label="Dictate">${G.ICON.mic}</button>` : ''}<button class="btn primary">${chat.msgs.length || chat.mode === 'ask' ? 'Send' : 'Start'}</button></form></section>`;
   }
   function tutorPrompt() {
@@ -452,15 +474,37 @@
     const u = (A.scenOf && A.scenOf(chat.scen)) || cur;
     const base = `You are "Lucía", a warm Spanish tutor from Madrid. Use Castilian Spanish (vosotros, Spain vocabulary, pretérito perfecto for today's events). The learner is a native Dutch/English speaker at CEFR ${lv}; they have studied up to "${cur.title}". Keep your Spanish at ${lv} level${['A1', 'A2'].includes(lv) ? ': short, simple sentences and present/near-past tenses' : ''}.`;
     if (chat.mode === 'ask') return base + ' The learner asks questions about Spanish. Answer in clear English with Spanish examples. Be concise and practical.';
-    const scen = chat.mode === 'talk' ? `\nRole-play scenario: ${u.talk}\nTarget grammar: ${u.grammar.t}.\nUseful vocabulary: ${u.vocab.slice(0, 25).map(v => v[0]).join(', ')}.` : '\nHave a natural, friendly conversation on topics the learner chooses.';
+    const R2 = G.READER, call = CALLS.find(c => c[0] === chat.opt.call) || CALLS[0], story = chat.opt.story && R2 && R2.STORY[chat.opt.story];
+    const scen = chat.mode === 'talk' ? `\nRole-play scenario: ${u.talk}\nTarget grammar: ${u.grammar.t}.\nUseful vocabulary: ${u.vocab.slice(0, 25).map(v => v[0]).join(', ')}.`
+      : chat.mode === 'debate' ? `\nYou are a friendly but sharp debate partner. The motion is: "${chat.opt.debate}". First ask the learner whether they agree. Then defend the opposite position with clear arguments, one or two per turn, ask them to justify their view, and challenge weak arguments politely. Model useful argumentation connectors.`
+      : chat.mode === 'interview' ? `\nYou are a professional interviewer in Spain for this job: ${chat.opt.job}. Use usted. Ask one question at a time (experience, studies, strengths and weaknesses, a difficult situation and how they solved it, availability, why this job, salary expectations), react briefly to each answer and follow up when an answer is vague. After about eight questions, close the interview politely.`
+      : chat.mode === 'phone' ? `\nThis is a PHONE CALL. ${call[2]} Answer the phone as in Spain ("¿Dígame?", "Centro de salud, buenos días"). Keep turns short, as on the phone.`
+      : chat.mode === 'retell' && story ? `\nThe learner has read this text from their course and will retell it in their own words:\n---\n${story.x.slice(0, 6000)}\n---\nFirst ask them to tell you what the text is about. Ask follow-up questions about what happened and why (one at a time), gently point out any important misunderstanding of the content, and finally ask for their opinion about it.`
+      : '\nHave a natural, friendly conversation on topics the learner chooses.';
     return base + scen + `\nRules: stay in character and reply in Spanish (2–4 sentences), always ending with a question to keep the conversation going. If the learner's last message had mistakes, add after a blank line: "Corrección:" then the corrected sentence(s) and a very short English explanation. If there were no mistakes, add nothing.`;
   }
   binders.tutor = () => {
     if (!C.ai.available()) return;
     const box = $('#chat'); if (box) box.scrollTop = box.scrollHeight;
-    $$('[data-mode]').forEach(b => b.onclick = () => { chat.mode = b.dataset.mode; chat.msgs = []; A.render(); });
+    $$('[data-mode]').forEach(b => b.onclick = () => { chat.mode = b.dataset.mode; chat.msgs = []; chat.fb = null; A.render(); });
+    const to = $('#topt'); if (to) to.onchange = () => { chat.opt[to.dataset.k] = to.value; chat.msgs = []; chat.fb = null; A.render(); };
+    const tf = $('#tfeed'); if (tf) tf.onclick = async () => {
+      const said = chat.msgs.filter(m => m.role === 'user').map(m => m.content).join('\n');
+      tf.disabled = true; tf.textContent = 'Reading the conversation…';
+      const what = { talk: 'a role-play: ' + ((A.scenOf && A.scenOf(chat.scen)) || {}).talk, debate: 'a debate on the motion "' + chat.opt.debate + '"', interview: 'a job interview for: ' + chat.opt.job, phone: 'a phone call: ' + ((CALLS.find(c => c[0] === chat.opt.call) || CALLS[0])[1]), retell: 'retelling a story they read', free: 'a free conversation' }[chat.mode] || 'a conversation';
+      try {
+        const fb = await G.STUDIO.aiFeedback({ skill: 'speaking', level: C.currentLevel(), task: 'Conversation practice with a tutor: ' + what, text: said, extra: "These are only the learner's turns in the conversation (typed or dictated), one per line; the tutor's turns are not shown.", max: 5 });
+        chat.fb = { list: fb.corrections || [], html: G.STUDIO.fbHtml(fb, 'speaking', true), saved: false };
+      } catch (e) { chat.fb = { list: [], html: `<p class="muted">${esc(C.ai.errText(e))}</p>` }; }
+      A.render(); const bx = $('#tfbox'); if (bx) bx.scrollIntoView({ block: 'nearest' });
+    };
+    const tfs = $('#tfsave'); if (tfs) tfs.onclick = () => {
+      const picked = chat.fb.list.filter((c, i) => { const cb = $(`#tfbox [data-fxpick="${i}"]`); return !cb || cb.checked; });
+      const r = G.STUDIO.addFixes(picked, 'tutor', chat.mode); chat.fb.saved = true;
+      C.toast(`${r.n} correction${r.n === 1 ? '' : 's'} saved${r.cards ? `, ${r.cards} new review card${r.cards > 1 ? 's' : ''}` : ''}.`); A.render();
+    };
     const sc = $('#scen'); if (sc) sc.onchange = () => { chat.scen = sc.value; chat.msgs = []; A.render(); };
-    $('#treset').onclick = () => { chat.msgs = []; A.render(); };
+    $('#treset').onclick = () => { chat.msgs = []; chat.fb = null; A.render(); };
     $$('[data-sayc]').forEach(b => b.onclick = () => C.speak(b.dataset.sayc));
     const send = async () => {
       if (chat.busy) return;
@@ -618,7 +662,7 @@ grant select, insert, update on public.camino_state to authenticated;`;
       <li><b>Explicit grammar, then lots of input.</b> Each stage has a rule explanation, 20 drills, key sentences, three graded readings and real podcast episodes. Input hours are tracked because comprehension grows with them.</li>
       <li><b>Output.</b> Dictation, shadowing, writing with feedback and role-play conversations close the loop.</li>
       <li><b>Curriculum.</b> Stages follow the Instituto Cervantes Plan Curricular levels; vocabulary is sized to CEFR expectations (about 4,000 words by B2).</li></ul>
-    <h2>A good daily routine (45 minutes)</h2><ol><li>Reviews first (10–20 min).</li><li>One or two lesson steps (10–15 min).</li><li>A batch of new words from the stage or a deck (5–10 min).</li><li>Read or listen in the Library, or listen to the stage's podcast and log it (15+ min).</li><li>Twice a week: write a text or chat with the tutor. Use Entreno whenever you have spare minutes.</li></ol>
+    <h2>A good daily routine (45 minutes)</h2><ol><li>Reviews first (10–20 min).</li><li>One or two lesson steps (10–15 min).</li><li>A batch of new words from the stage or a deck (5–10 min).</li><li>Read or listen in the Library, or listen to the stage's podcast and log it (15+ min).</li><li>Every day: your one-minute talk in Speak &amp; write; once a week, a portfolio text. Use Entreno whenever you have spare minutes.</li></ol>
     <p>Realistic expectations: C1 typically takes well over 1,000 hours of total contact with the language. Keep the reviews running, read and listen every day, and the hours add up.</p>
     <h2>Running it yourself</h2><p>Camino is a plain folder of HTML and JavaScript with no build step and no server code. It runs:</p><ul>
       <li><b>From your computer:</b> unzip the folder and open <code>index.html</code> in Chrome, Edge, Firefox or Safari.</li>
@@ -626,13 +670,14 @@ grant select, insert, update on public.camino_state to authenticated;`;
       <li><b>On claude.ai:</b> sync and the AI tutor work automatically.</li></ul>
     <p>Progress is stored in the browser you use. To use several devices, set up free Supabase sync or move backup files between them (Settings). Each address (claude.ai, your GitHub Pages site, a local file) keeps its own progress, so use backups to move between them.</p>
     <h2>Roadmap</h2><ul>
-      <li><b>Done:</b> standalone mode, optional Supabase sync, your-own-key AI tutor, browser speech recognition, placement test, level exams and DELE-style mocks, ten practice types with a mistake notebook, all 87 stages from A1 to C2 at full depth (about 6,000 words), rule-first teaching with a Grammar page and a 📖 Rule button in every exercise, and a Library with 110 graded texts (at least 3 hours of reading and listening per level, A1–C1), a listening player and 21 Living in Spain modules.</li>
-      <li><b>Next:</b> daily speaking and a writing portfolio, installable app with offline mode.</li></ul></section>`;
+      <li><b>Done:</b> standalone mode, optional Supabase sync, your-own-key AI tutor, browser speech recognition, placement test, level exams and DELE-style mocks, ten practice types with a mistake notebook, all 87 stages from A1 to C2 at full depth (about 6,000 words), rule-first teaching with a Grammar page and a 📖 Rule button in every exercise, and a Library with 110 graded texts (at least 3 hours of reading and listening per level, A1–C1), a listening player and 21 Living in Spain modules, and a Speak & write studio: a daily one-minute talk, pronunciation drills, a writing portfolio by text type, and corrections that feed your reviews and mistake notebook.</li>
+      <li><b>Next:</b> installable app with offline mode, an adaptive daily plan, a weekly report and search.</li></ul></section>`;
   }
 
   // ---------- boot ----------
-  document.addEventListener('camino:caps', () => { if (!EX.isActive()) A.render(); });
-  document.addEventListener('camino:synced', () => { if (!EX.isActive()) A.render(); });
+  const quiet = () => !EX.isActive() && !(G.STUDIO && G.STUDIO.busy());
+  document.addEventListener('camino:caps', () => { if (quiet()) A.render(); });
+  document.addEventListener('camino:synced', () => { if (quiet()) A.render(); });
   document.addEventListener('camino:sync', syncBadge);
   A.render();
   C.checkBadges();

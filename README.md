@@ -13,6 +13,13 @@ A free, self-contained Spanish course for the browser: Castilian Spanish from A1
 * **Library (Biblioteca):** 110 original graded texts from A1 to C1 (about 51,000 words), enough for at least 3 hours of reading and listening at every level (the Library shows the hours per level). Ten serials told in chapters (a year in Madrid, a new life in Cádiz, a flatshare comedy, a summer job in Asturias, a mystery on the Camino, a bookshop in Malasaña, a Galician family house, a missing painting in Albarracín, a translator's secret, a mining town in El Bierzo), biographies (Picasso, Nadal, Gloria Fuertes, Lorca, Matute, Cajal, Margarita Salas, Ochoa, Concepción Arenal, Campoamor, Machado, Zambrano), Spanish history from Atapuerca to the Transition, easy news, essays, reportage, interviews and short fiction. A1 texts use only the present tense; A2 adds the past tenses. Every word is tappable for its meaning, with a button to add it to **My words** (a personal deck on the Decks page). Each text has 5–6 comprehension questions, and the reading time is logged as input automatically.
 * **Listening:** a sentence-by-sentence player with speed control, highlighting, two voices for dialogues, **Listen first** mode (text hidden until you choose to see it) and keyboard control: Space play/pause, R or ← repeat the last sentence, → next sentence. A guided worksheet for any podcast episode logs minutes, a summary and the words you caught.
 * **Living in Spain (Vivir en España):** 21 modules on everyday life: the GP and the health card, the pharmacy, renting, the padrón, NIE/TIE, banking, the tax return, contracts and payslips, school, tú or usted, mealtimes, markets, regional food, fiestas, public transport, 112, Correos, the residents' association, the driving licence, recycling, phone and internet. Each has a text, 15 words, a model conversation to listen to and shadow, a role-play for the AI tutor (or a no-AI way to practise it) and a checklist of real tasks.
+* **Speak & write (Hablar y escribir):**
+  * **Daily one-minute talk:** 136 topics from A1 to C2, each with useful phrases and a model answer. 30 seconds to prepare, one minute to speak; speech recognition writes down what you say and shows words, words per minute, different words and phrases used. You mark yourself on the DELE speaking criteria and write down your corrections.
+  * **Pronunciation:** eight sets (r/rr, s/z, the jota, ñ, pure vowels, stress and written accents, soft b/d/g, tongue twisters) with tips, listen-and-choose drills that work in any browser, and say-it drills checked by speech recognition.
+  * **Writing portfolio:** ten text types by level (postcard and message at A1–A2, email and story at B1, opinion essay and formal complaint at B2, report and argumentative essay at C1, review and article at C2), each with a checklist, useful phrases, a model text and six tasks. Drafts save themselves; finished texts are marked on the DELE writing criteria and kept with their date, word count, level and feedback; rewrites are kept as versions.
+  * **Corrections feed your review and the mistake notebook:** every correction you save (yours, or the AI's) becomes a review card in My words and a point in the mistake notebook, and the page shows your three most frequent errors per 1,000 words, last 30 days against the 30 before.
+  * **Exam speaking:** the DELE oral tasks from the mock exams, timed, with self-marking.
+  * **Tutor modes (AI, optional):** debate partner, job interview, phone call, and «explain it back» (retell a story from the Library), each ending with feedback on the criteria and corrections you can save.
 * **Native recordings (optional):** with **Native recordings** switched on in Settings, word cards and the tap-to-translate popup offer a recording by a native speaker from Lingua Libre (Wikimedia Commons, CC BY-SA) when one exists. This needs internet; without it the browser voice is used.
 * An FSRS spaced-repetition scheduler, a free-practice page (Entreno), input-hour tracking with podcast links, streaks, stats and stamps.
 
@@ -96,7 +103,7 @@ The key is stored only in your browser's local storage, is never included in bac
 2. One or two **lesson steps** of your current stage (10–15 min).
 3. A **batch of new words** from the stage or a deck (5–10 min).
 4. **Read or listen** in the Library (a graded text at your level logs itself), or listen to the stage's podcast and log it with the worksheet (15+ min).
-5. Use **Practice** (Entreno) whenever you have spare minutes; write or chat with the tutor twice a week.
+5. Do your **one-minute talk** (Speak & write) every day, and write one portfolio text a week. Use **Practice** (Entreno) whenever you have spare minutes.
 
 Settings let you change the daily goal, words per batch, the new-word target per day, and **free roam** (open every stage without checkpoints).
 
@@ -118,6 +125,10 @@ practice.js    new exercise types, workouts, mistake notebook
 exams.js       placement test, level exams, mock exams
 grammar.js     rule-first logic: Grammar page, rule sheet, form notes, tense explanations, what has been taught
 reader.js      library: graded reader, listening player, Living in Spain modules, My words, native recordings
+studio.js      speak & write: daily talk, pronunciation, writing portfolio, corrections, exam speaking
+data/talk-*.js    one-minute talk topics with model answers (A1–C2)
+data/writing-types.js  writing portfolio: text types, checklists, phrases, models, tasks
+data/pron.js       pronunciation sets
 data/reader-*.js  graded texts (A1–C1, three files per level up to A2, two from B1)
 data/culture*.js  Living in Spain modules
 config.js      your own settings (built-in Supabase URL + publishable key)

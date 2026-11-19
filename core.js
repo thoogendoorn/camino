@@ -105,7 +105,7 @@
 
   // ---------- state ----------
   const blankSettings = () => ({ goal: 45, rate: 0.95, voice: '', tts: 'auto', autoplay: true, strictAccents: false, reviewCap: 150, batch: 10, newPerDay: 30, freeRoam: false, ai: 'auto', aiProv: 'anthropic', aiModel: '' });
-  const blank = () => ({ v: 2, updated: 0, created: Date.now(), settings: blankSettings(), units: {}, cards: {}, days: {}, input: [], writing: {}, badges: {}, tutorChats: 0, lastBackup: 0, exams: [], reports: [], tags: {}, speedBest: 0, rulesRead: {}, tensesRead: {}, tips: {}, stories: {}, cultureTasks: {}, mywords: [] });
+  const blank = () => ({ v: 2, updated: 0, created: Date.now(), settings: blankSettings(), units: {}, cards: {}, days: {}, input: [], writing: {}, badges: {}, tutorChats: 0, lastBackup: 0, exams: [], reports: [], tags: {}, speedBest: 0, rulesRead: {}, tensesRead: {}, tips: {}, stories: {}, cultureTasks: {}, mywords: [], talks: [], portfolio: [], fixes: [], pron: {} });
   C.blank = blank;
   C.S = blank();
   function load() {
@@ -263,7 +263,9 @@
     ['lx-b2', 'Examen B2', 'Passed the B2 level exam', () => (C.S.exams || []).some(e => e.kind === 'level' && e.level === 'B2' && e.pass)],
     ['lx-c1', 'Examen C1', 'Passed the C1 level exam', () => (C.S.exams || []).some(e => e.kind === 'level' && e.level === 'C1' && e.pass)],
     ['mock1', 'Simulacro', 'Completed a full mock exam', () => (C.S.exams || []).some(e => e.kind === 'mock' && e.full)],
-    ['mockpass', 'Apto', 'Passed a full mock exam (30/50 in both groups)', () => (C.S.exams || []).some(e => e.kind === 'mock' && e.full && e.pass)]
+    ['mockpass', 'Apto', 'Passed a full mock exam (30/50 in both groups)', () => (C.S.exams || []).some(e => e.kind === 'mock' && e.full && e.pass)],
+    ['talk-30', 'Charlatán', '30 one-minute talks', () => (C.S.talks || []).length >= 30],
+    ['texts-10', 'Pluma', '10 texts in your writing portfolio', () => (C.S.portfolio || []).filter(p => p.status === 'final').length >= 10]
   ];
   C.checkBadges = () => {
     const s = C.stats(); const fresh = [];
@@ -327,9 +329,12 @@
     if (m.exams) { S.exams = S.exams || []; const ids = new Set(S.exams.map(e => e.id)); m.exams.forEach(e => { if (!ids.has(e.id)) S.exams.push(e); }); S.exams.sort((a, b) => b.ts - a.ts); }
     if (m.tags) { S.tags = S.tags || {}; for (const k in m.tags) { const r = m.tags[k], l = S.tags[k]; if (!l || (r.last || 0) > (l.last || 0)) S.tags[k] = r; } }
     S.speedBest = Math.max(S.speedBest || 0, m.speedBest || 0);
+    // Phase 5: talks, portfolio texts and corrections merge by id (newest version wins); pronunciation scores keep the best.
+    ['talks', 'portfolio', 'fixes'].forEach(k => { if (!m[k]) return; const L = S[k] = S[k] || [], by = new Map(L.map(x => [x.id, x])); m[k].forEach(r => { const l = by.get(r.id); if (!l) L.push(r); else if ((r.ts || 0) > (l.ts || 0)) L[L.indexOf(l)] = r; }); L.sort((a, b) => (b.created || b.ts || 0) - (a.created || a.ts || 0)); });
+    if (m.pron) { S.pron = S.pron || {}; for (const k in m.pron) { const r = m.pron[k] || {}, l = S.pron[k] || {}, o = Object.assign({}, l, (r.last || 0) > (l.last || 0) ? { last: r.last, lastPct: r.lastPct } : {}); ['listen', 'say', 'n'].forEach(f => { if (r[f] != null || l[f] != null) o[f] = Math.max(r[f] || 0, l[f] || 0); }); S.pron[k] = o; } }
     if (m.reports) { S.reports = S.reports || []; const ks = new Set(S.reports.map(r => r.ts)); m.reports.forEach(r => { if (!ks.has(r.ts)) S.reports.push(r); }); }
   };
-  C.metaOf = S => ({ stories: S.stories, cultureTasks: S.cultureTasks, mywords: S.mywords, rulesRead: S.rulesRead, tensesRead: S.tensesRead, tips: S.tips, units: S.units, days: S.days, input: S.input.slice(0, 1500), badges: S.badges, writing: S.writing, settings: S.settings, updated: S.updated, created: S.created, tutorChats: S.tutorChats, lastBackup: S.lastBackup, exams: (S.exams || []).slice(0, 300), reports: (S.reports || []).slice(0, 200), tags: S.tags || {}, speedBest: S.speedBest || 0 });
+  C.metaOf = S => ({ talks: (S.talks || []).slice(0, 400), portfolio: (S.portfolio || []).slice(0, 300), fixes: (S.fixes || []).slice(0, 1500), pron: S.pron || {}, stories: S.stories, cultureTasks: S.cultureTasks, mywords: S.mywords, rulesRead: S.rulesRead, tensesRead: S.tensesRead, tips: S.tips, units: S.units, days: S.days, input: S.input.slice(0, 1500), badges: S.badges, writing: S.writing, settings: S.settings, updated: S.updated, created: S.created, tutorChats: S.tutorChats, lastBackup: S.lastBackup, exams: (S.exams || []).slice(0, 300), reports: (S.reports || []).slice(0, 200), tags: S.tags || {}, speedBest: S.speedBest || 0 });
 
   // ---------- sync route 1: claude.ai artifact storage (private per person) ----------
   const SHARDS = 16;

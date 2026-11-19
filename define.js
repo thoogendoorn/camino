@@ -37,4 +37,14 @@
   //   model: "Name: line" dialogue, talk: role-play scenario for the tutor, tasks: [real-world tasks] }
   C.cult = C.cult || [];
   C.culture = m => { C.cult.push(m); };  // DELE-style mock exams (data/mock-*.js)
+  // Speaking and writing studio (Phase 5).
+  // data/talk-*.js: one-minute talk prompts { id, level, es, en, ph: [useful phrases], model: example answer }
+  C.talks = C.talks || [];
+  C.talk = level => (id, es, en, ph, model) => { C.talks.push({ id, level, es, en, ph: String(ph).split(' ; ').map(x => x.trim()).filter(Boolean), model }); };
+  // data/writing-types.js: { id, level, title, en, words: [min, max], checklist: [...], phrases: [...], model: { task, text }, tasks: [{ id, es, points: [...] }] }
+  C.wtypes = C.wtypes || [];
+  C.wtype = t => { C.wtypes.push(t); };
+  // data/pron.js: pronunciation sets { id, title, sound, tips, pairs: [[a, b], ...] | words: [...], twisters: [...] }
+  C.pron = C.pron || [];
+  C.pronSet = p => { C.pron.push(p); };
 })(typeof window !== 'undefined' ? window : globalThis);
