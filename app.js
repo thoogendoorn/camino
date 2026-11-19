@@ -626,8 +626,8 @@ grant select, insert, update on public.camino_state to authenticated;`;
       <li><b>On claude.ai:</b> sync and the AI tutor work automatically.</li></ul>
     <p>Progress is stored in the browser you use. To use several devices, set up free Supabase sync or move backup files between them (Settings). Each address (claude.ai, your GitHub Pages site, a local file) keeps its own progress, so use backups to move between them.</p>
     <h2>Roadmap</h2><ul>
-      <li><b>Done:</b> standalone mode, optional Supabase sync, your-own-key AI tutor, browser speech recognition, placement test, level exams and DELE-style mocks, ten practice types with a mistake notebook, all 87 stages from A1 to C2 at full depth (about 6,000 words), rule-first teaching with a Grammar page and a 📖 Rule button in every exercise, and a Library with 49 graded texts (A1–C1), a listening player and 21 Living in Spain modules.</li>
-      <li><b>Next:</b> more graded texts (towards 120), daily speaking and a writing portfolio, installable app with offline mode.</li></ul></section>`;
+      <li><b>Done:</b> standalone mode, optional Supabase sync, your-own-key AI tutor, browser speech recognition, placement test, level exams and DELE-style mocks, ten practice types with a mistake notebook, all 87 stages from A1 to C2 at full depth (about 6,000 words), rule-first teaching with a Grammar page and a 📖 Rule button in every exercise, and a Library with 110 graded texts (at least 3 hours of reading and listening per level, A1–C1), a listening player and 21 Living in Spain modules.</li>
+      <li><b>Next:</b> daily speaking and a writing portfolio, installable app with offline mode.</li></ul></section>`;
   }
 
   // ---------- boot ----------

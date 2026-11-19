@@ -226,6 +226,15 @@
     return `<a class="story-card ${done ? 'done' : ''}" href="#story-${s.id}"><span class="sc-k">${s.level} · ${esc(s.genre || '')}${s.series ? ' · cap. ' + s.ch : ''}</span><b>${esc(s.title)}</b><span class="sc-s">${esc(s.blurb || '')}</span><span class="sc-m">${s.words} words · ~${s.min} min${done ? ` · ✓ read${x.score != null ? ' · ' + x.score + '/' + s.qs.length : ''}` : ''}</span></a>`;
   };
   R.nextFor = level => R.STORIES.find(s => s.level === level && !R.isRead(s.id) && (!s.series || (R.SERIES[s.series][0] === s || R.isRead(R.SERIES[s.series][R.SERIES[s.series].indexOf(s) - 1].id))));
+  // Input available at a level: reading time (WPM) + one listening pass with the player (TTS_WPM), stories plus culture modules.
+  const TTS_WPM = { A1: 130, A2: 135, B1: 140, B2: 145, C1: 150, C2: 155 };
+  R.inputAt = L => {
+    const st = R.STORIES.filter(s => s.level === L), cm = R.CULTURE.filter(m => m.level === L);
+    let read = 0, listen = 0, left = 0;
+    st.concat(cm).forEach(x => { const r = x.words / (WPM[L] || 90), l = x.words / (TTS_WPM[L] || 140); read += r; listen += l; if (!R.isRead(x.culture ? 'c:' + x.id : x.id)) left += r + l; });
+    return { texts: st.length, mods: cm.length, read: Math.round(read), listen: Math.round(listen), total: Math.round(read + listen), left: Math.round(left) };
+  };
+  R.fmtMin = m => m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '');
   R.storiesHtml = () => {
     const cur = lvl(); const L = libLv || (LV.slice(0, 5).includes(cur) ? cur : 'C1');
     const tiers = LV.slice(0, 5).filter(l => R.STORIES.some(s => s.level === l));
@@ -234,8 +243,10 @@
     const solo = here.filter(s => !s.series);
     const next = R.nextFor(L);
     const readN = R.STORIES.filter(s => R.isRead(s.id)).length;
+    const hrs = R.inputAt(L);
     return `<p class="lead">Original stories written for each level, from short scenes to serial novels. Tap any word for its meaning and add it to your review; listen with the player; answer the questions at the end. Reading time is logged as input automatically.</p>
       <div class="seg" role="tablist" aria-label="Level">${tiers.map(l => `<button class="${l === L ? 'on' : ''}" data-lib-lv="${l}">${l} <small>${R.STORIES.filter(s => s.level === l && R.isRead(s.id)).length}/${R.STORIES.filter(s => s.level === l).length}</small></button>`).join('')}</div>
+      <p class="muted" id="libhours"><b>${L}:</b> ${hrs.texts} texts${hrs.mods ? ` and ${hrs.mods} Living in Spain module${hrs.mods > 1 ? "s" : ""}` : ''}, about ${R.fmtMin(hrs.total)} of reading and listening (${R.fmtMin(hrs.read)} reading, ${R.fmtMin(hrs.listen)} listening)${hrs.left < hrs.total ? `; ${R.fmtMin(hrs.left)} still new to you` : ''}.</p>
       <p class="muted">${readN} of ${R.STORIES.length} texts read.${next ? ` Next at ${L}: <a href="#story-${next.id}">${esc(next.title)}</a>.` : ''}</p>
       ${series.map(sr => { const list = R.SERIES[sr]; const nd = list.filter(s => R.isRead(s.id)).length; return `<div class="series"><h3>${esc(sr)} <small class="muted">· serial in ${list.length} chapters · ${nd}/${list.length} read</small></h3><div class="story-grid">${list.map(card).join('')}</div></div>`; }).join('')}
       ${solo.length ? `<h3>Stories, portraits and easy news</h3><div class="story-grid">${solo.map(card).join('')}</div>` : ''}`;

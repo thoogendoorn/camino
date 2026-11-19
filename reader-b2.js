@@ -304,7 +304,7 @@ elocuente = eloquent
 pecado = sin`
   });
 
-  S({ id: 'b2-espana-vaciada', level: L, genre: 'Reportaje', title: 'Pueblos que se niegan a desaparecer',
+  S({ id: 'b2-espana-vaciada', level: L, genre: 'Reportaje (con personajes ficticios)', title: 'Pueblos que se niegan a desaparecer',
     blurb: 'Depopulation in inland Spain, and the people trying to reverse it.',
     x: `A las nueve de la mañana, en la plaza de un pueblo de la provincia de Teruel, el único ruido es el de una fuente. El bar abre a las diez, si viene la dueña, que vive en el pueblo de al lado. El autobús pasa dos veces por semana. La escuela cerró hace quince años. En invierno quedan unas cuarenta personas, casi todas mayores de setenta años.
 
