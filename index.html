@@ -37,7 +37,13 @@ a{color:var(--blue)}p{margin:.4em 0 .8em}
 .brand{display:flex;align-items:center;gap:8px;font:700 24px "Barlow Condensed",sans-serif;color:var(--ink);text-decoration:none;flex:none}
 .brand .logo{flex:none;width:32px;height:32px;border-radius:7px;background:var(--blue);display:grid;place-items:center}.brand .logo svg{width:24px;height:24px}
 @media(max-width:520px){.brand .bt{display:none}}
-#nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1}#nav::-webkit-scrollbar{display:none}
+.navwrap{position:relative;display:flex;align-items:center;flex:1;min-width:0;gap:2px}
+#nav{display:flex;gap:2px;overflow-x:auto;flex:1;min-width:0;padding:7px 0 11px;scroll-behavior:smooth;overscroll-behavior-x:contain;scrollbar-width:none}#nav::-webkit-scrollbar{display:none}
+.navtrack{position:absolute;left:0;right:0;bottom:3px;height:5px;border-radius:3px;background:var(--stone);touch-action:none;cursor:pointer}.navtrack[hidden]{display:none}
+.navthumb{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--mut);opacity:.55;cursor:grab;transition:opacity .15s}.navtrack:hover .navthumb,.navthumb.drag{opacity:.9}.navthumb.drag{cursor:grabbing}
+.navtrack::before{content:"";position:absolute;left:0;right:0;top:-6px;bottom:-4px}
+.navarr{flex:none;width:30px;height:34px;border:0;border-radius:8px;background:var(--stone);color:var(--ink);font:700 18px Barlow,sans-serif;cursor:pointer;display:grid;place-items:center;padding:0}.navarr:hover{background:var(--line)}.navarr[hidden]{display:none}
+@media(pointer:coarse){.navarr{display:none}}
 #nav a{flex:none;padding:8px 11px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:15.5px;white-space:nowrap}
 #nav a.on{background:var(--blue);color:#fff}#nav a:not(.on):hover{background:var(--stone)}
 #syncstate{flex:none;font-size:13px;color:var(--mut);white-space:nowrap}#syncstate[data-s=on]::before{content:"● ";color:var(--blue)}#syncstate[data-s=error]::before{content:"● ";color:var(--bad)}
@@ -305,9 +311,11 @@ button.story-card{font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
 <body>
 <header class="top">
   <a class="brand" href="#today"><span class="logo"><svg viewBox="0 0 40 40" aria-hidden="true"><g stroke="#f5b700" stroke-width="3" stroke-linecap="round" fill="none"><path d="M20 35L4 14M20 35L9 9M20 35L15 6M20 35V5M20 35L25 6M20 35L31 9M20 35L36 14"/><path d="M4 14C8 6 14 4 20 4s12 2 16 10"/></g></svg></span><span class="bt">Camino</span></a>
+  <div class="navwrap"><button class="navarr" id="navl" type="button" aria-label="Scroll menu left" hidden>‹</button>
   <nav id="nav" aria-label="Main">
     <a href="#today">Today</a><a href="#camino">Path</a><a href="#grammar">Grammar</a><a href="#review">Review</a><a href="#gym">Practice</a><a href="#studio">Speak &amp; write</a><a href="#exams">Exams</a><a href="#decks">Decks</a><a href="#verbs">Verbs</a><a href="#library">Library</a><a href="#tutor">Tutor</a><a href="#progress">Progress</a><a href="#prefs">Settings</a>
   </nav>
+  <button class="navarr" id="navr" type="button" aria-label="Scroll menu right" hidden>›</button><div class="navtrack" id="navtrack" aria-hidden="true" hidden><div class="navthumb" id="navthumb"></div></div></div>
   <span id="syncstate">Saved in this browser</span>
 </header>
 <main id="main"><section class="band"><h1>Cargando…</h1><p>Loading your Camino.</p></section></main>

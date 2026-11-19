@@ -23,10 +23,50 @@
   A.go = r => { if (location.hash.slice(1) === r) A.render(); else location.hash = r; };
   addEventListener('hashchange', () => { if (!EX.isActive()) A.render(); window.scrollTo(0, 0); });
 
+  // ---------- top menu as a slider: thin scrollbar, arrows when there is more, wheel and drag to slide ----------
+  const navBar = () => {
+    const nav = $('#nav'), l = $('#navl'), r = $('#navr'); if (!nav || nav.dataset.slider) return; nav.dataset.slider = '1';
+    const tr = $('#navtrack'), th = $('#navthumb');
+    const upd = () => {
+      const max = nav.scrollWidth - nav.clientWidth; if (l) l.hidden = nav.scrollLeft <= 2; if (r) r.hidden = max <= 2 || nav.scrollLeft >= max - 2;
+      if (!tr) return; tr.hidden = max <= 2; if (max <= 2) return;
+      // the slide bar sits under the menu items: its thumb shows which part of the menu is in view
+      const box = nav.getBoundingClientRect(), wrap = tr.parentNode.getBoundingClientRect();
+      tr.style.left = (box.left - wrap.left) + 'px'; tr.style.right = (wrap.right - box.right) + 'px';
+      const tw = box.width, w = Math.max(28, tw * nav.clientWidth / nav.scrollWidth);
+      th.style.width = w + 'px'; th.style.left = ((tw - w) * nav.scrollLeft / max) + 'px';
+    };
+    if (tr) {
+      // drag the thumb, or tap the bar to jump there
+      let tx = null, ts = 0;
+      const ratio = () => { const tw = tr.clientWidth, w = th.offsetWidth; return (nav.scrollWidth - nav.clientWidth) / Math.max(1, tw - w); };
+      th.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); tx = e.clientX; ts = nav.scrollLeft; th.classList.add('drag'); nav.style.scrollBehavior = 'auto'; th.setPointerCapture(e.pointerId); });
+      th.addEventListener('pointermove', e => { if (tx == null) return; nav.scrollLeft = ts + (e.clientX - tx) * ratio(); });
+      const end = () => { tx = null; th.classList.remove('drag'); nav.style.scrollBehavior = ''; };
+      th.addEventListener('pointerup', end); th.addEventListener('pointercancel', end);
+      tr.addEventListener('pointerdown', e => { if (e.target === th) return; const b = tr.getBoundingClientRect(), w = th.offsetWidth; nav.scrollTo({ left: (e.clientX - b.left - w / 2) * ratio(), behavior: 'smooth' }); });
+    }
+    const step = d => nav.scrollBy({ left: d * Math.max(160, nav.clientWidth * 0.6), behavior: 'smooth' });
+    if (l) l.onclick = () => step(-1); if (r) r.onclick = () => step(1);
+    nav.addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd);
+    // a vertical mouse wheel slides the menu sideways (only when it actually overflows)
+    nav.addEventListener('wheel', e => { if (nav.scrollWidth <= nav.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; e.preventDefault(); nav.scrollLeft += e.deltaY; }, { passive: false });
+    // drag with the mouse to slide; a real drag does not open the link under the pointer
+    let x0 = null, s0 = 0, moved = false;
+    nav.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0) return; x0 = e.clientX; s0 = nav.scrollLeft; moved = false; });
+    addEventListener('pointermove', e => { if (x0 == null) return; const dx = e.clientX - x0; if (Math.abs(dx) > 5) { moved = true; nav.style.scrollBehavior = 'auto'; nav.scrollLeft = s0 - dx; } });
+    addEventListener('pointerup', () => { x0 = null; nav.style.scrollBehavior = ''; });
+    nav.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+    nav.addEventListener('dragstart', e => e.preventDefault());
+    A.navUpdate = upd; upd();
+  };
+  const navShowActive = () => { const nav = $('#nav'), on = $('#nav a.on'); if (!nav || !on) return; const a = on.offsetLeft - nav.offsetLeft, b = a + on.offsetWidth; if (a < nav.scrollLeft + 8 || b > nav.scrollLeft + nav.clientWidth - 8) nav.scrollTo({ left: Math.max(0, a - (nav.clientWidth - on.offsetWidth) / 2), behavior: 'smooth' }); if (A.navUpdate) A.navUpdate(); };
+
   const views = () => ({ today: viewToday, camino: viewCamino, grammar: () => G.GRAM.view(), studio: () => G.STUDIO.view(), review: viewReview, gym: viewGym, exams: () => G.EXAMS.view(), decks: viewDecks, verbs: viewVerbs, library: viewLibrary, tutor: viewTutor, progress: viewProgress, prefs: viewSettings, about: viewAbout });
   A.render = () => {
     const r = A.route();
     $$('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + r || (r.startsWith('unit-') && a.getAttribute('href') === '#camino') || (/^(story|culture)-/.test(r) && a.getAttribute('href') === '#library')));
+    navBar(); navShowActive();
     const main = $('#main');
     if (!C.UNITS.length) { const miss = (G.CAMINO_MISSING || []); main.innerHTML = `<section class="band"><h1>The course files didn't load</h1><p class="lead">Camino started, but found no lessons. ${miss.length ? 'These files are missing or could not be loaded:' : 'The <code>data</code> folder is probably missing.'}</p>${miss.length ? `<ul>${miss.map(f => `<li><code>${esc(f)}</code></li>`).join('')}</ul>` : ''}<p>Make sure the <code>data</code> folder (with all its files) sits next to <code>index.html</code>, then reload. On GitHub, drag the whole <code>data</code> folder from your file manager onto the upload page; the "choose your files" button can't select folders.</p></section>`; return; }
     try {
