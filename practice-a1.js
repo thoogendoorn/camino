@@ -2,19 +2,19 @@
 (function () {
   const P = CAMINO.prac;
 
-  P('A1', 'transform', 'Ser, estar y tener')(`
+  P('A1', 'transform', 'Ser, estar y tener', 'a1-describir')(`
 Plural | Yo soy estudiante. | Nosotros somos estudiantes.
 Plural | Él es de Madrid. | Ellos son de Madrid.
 Plural | Tú estás cansado. | Vosotros estáis cansados.
 Singular | Ellas tienen un perro. | Ella tiene un perro.
 Singular | Nosotras somos profesoras. | Yo soy profesora.
-Pregunta (tú) | Tienes hermanos. | ¿Tienes hermanos?
+Usted (pregunta) | Tienes hermanos. | ¿Tiene hermanos?|¿Tiene usted hermanos?|¿Usted tiene hermanos?
 Negativa | Soy de Italia. | No soy de Italia.
 Negativa | Tengo coche. | No tengo coche.
 Usted | ¿De dónde eres? | ¿De dónde es usted?
 Usted | ¿Cómo te llamas? | ¿Cómo se llama usted?
 `);
-  P('A1', 'transform', 'Presente regular')(`
+  P('A1', 'transform', 'Presente regular', 'a1-bar')(`
 Nosotros | Yo hablo español. | Nosotros hablamos español.
 Ella | Yo vivo en Utrecht. | Ella vive en Utrecht.
 Vosotros | Tú comes mucho. | Vosotros coméis mucho.
@@ -26,7 +26,7 @@ Plural | El libro es interesante. | Los libros son interesantes.
 Plural | La casa es grande. | Las casas son grandes.
 Plural | Hay un bar en la plaza. | Hay dos bares en la plaza.
 `);
-  P('A1', 'errors', 'Ser, estar y tener')(`
+  P('A1', 'errors', 'Ser, estar y tener', 'a1-describir')(`
 Yo soy 25 años. | Yo tengo 25 años. | Age uses tener.
 Mi madre es en casa. | Mi madre está en casa. | Location uses estar.
 Ella está profesora. | Ella es profesora. | Professions use ser.
@@ -36,7 +36,7 @@ Madrid está la capital de España. | Madrid es la capital de España. | Identit
 ¿Cuántos años eres? | ¿Cuántos años tienes? | Age uses tener.
 Yo tengo hambre y tengo sed y soy bien. | Yo tengo hambre y tengo sed y estoy bien. | Bien goes with estar.
 `);
-  P('A1', 'errors', 'Género y número')(`
+  P('A1', 'errors', 'Género y número', 'a1-familia')(`
 La problema es difícil. | El problema es difícil. | Problema is masculine despite the -a.
 Tengo un hermana. | Tengo una hermana. | Hermana is feminine: una.
 Los casas son bonitas. | Las casas son bonitas. | Casas is feminine plural: las.
@@ -47,7 +47,7 @@ Tengo dos perro. | Tengo dos perros. | Plural after dos.
 La mano derecho. | La mano derecha. | Mano is feminine.
 El día es largo y la noche es largo. | El día es largo y la noche es larga. | Noche is feminine.
 `);
-  P('A1', 'errors', 'Presente regular')(`
+  P('A1', 'errors', 'Presente regular', 'a1-bar')(`
 Yo vivo en Madrid y trabajar en un hotel. | Yo vivo en Madrid y trabajo en un hotel. | Conjugate the second verb too.
 Nosotros comemos a las dos y cenan a las nueve. | Nosotros comemos a las dos y cenamos a las nueve. | Same subject, same person.
 ¿Tú hablo inglés? | ¿Tú hablas inglés? | Tú form ends in -as.
@@ -57,7 +57,7 @@ Me gustan bailar. | Me gusta bailar. | Infinitives take singular gusta.
 A ella le gusto el chocolate. | A ella le gusta el chocolate. | Le gusta + singular noun.
 Yo no gusta el café. | A mí no me gusta el café. | Gustar needs me, te, le…
 `);
-  P('A1', 'contrast', 'Ser o estar')(`
+  P('A1', 'contrast', 'Ser o estar', 'a1-describir')(`
 Mi casa [es/está] cerca del centro. | está | Location: estar.
 Mi casa [es/está] muy grande. | es | Permanent description: ser.
 Hoy [soy/estoy] muy cansada. | estoy | Temporary state: estar.
@@ -69,7 +69,7 @@ La reunión [es/está] a las diez. | es | Time of an event: ser.
 ¿Cómo [eres/estás]? Alto y moreno. | eres | Asking what someone is like: ser.
 [Es/Está] la una y media. | Es | Telling the time: ser.
 `);
-  P('A1', 'contrast', 'Hay o está')(`
+  P('A1', 'contrast', 'Hay o está', 'a1-casa')(`
 [Hay/Está] un supermercado en mi calle. | Hay | Existence of something new or indefinite: hay.
 El supermercado [hay/está] en mi calle. | está | Location of something specific: estar.
 ¿Dónde [hay/está] el baño? | está | Specific thing (el baño): estar.
@@ -77,7 +77,7 @@ El supermercado [hay/está] en mi calle. | está | Location of something specifi
 En la mesa [hay/están] tres libros. | hay | Numbers and quantities: hay.
 Mis libros [hay/están] en la mesa. | están | Specific things (mis libros): estar.
 `);
-  P('A1', 'contrast', 'Muy o mucho')(`
+  P('A1', 'contrast', 'Muy o mucho', 'a1-describir')(`
 Hace [muy/mucho] frío. | mucho | Before a noun (frío): mucho.
 Estoy [muy/mucho] cansado. | muy | Before an adjective: muy.
 Trabajas [muy/mucho]. | mucho | After a verb: mucho.
@@ -85,14 +85,14 @@ Habla [muy/mucho] bien español. | muy | Before an adverb: muy.
 Tengo [muchos/muy] amigos. | muchos | Before a noun: mucho agrees.
 Es una ciudad [muy/mucha] bonita. | muy | Before an adjective: muy never changes.
 `);
-  P('A1', 'contrast', 'Qué o cuál')(`
+  P('A1', 'contrast', 'Qué o cuál', 'a1-calendario')(`
 ¿[Qué/Cuál] es tu número de teléfono? | Cuál | Before ser asking for one item: cuál.
 ¿[Qué/Cuál] quieres beber? | Qué | Open question about things: qué.
 ¿[Qué/Cuál] es la capital de Perú? | Cuál | Identifying one from many: cuál.
 ¿[Qué/Cuál] es la paella? Es un plato de arroz. | Qué | Asking for a definition: qué es.
 ¿[Qué/Cuál] hora es? | Qué | Before a noun: qué.
 `);
-  P('A1', 'colloc', 'Expresiones con tener y hacer')(`
+  P('A1', 'colloc', 'Expresiones con tener y hacer', 'a1-libre')(`
 ___ hambre | tener | hacer;estar | to be hungry
 ___ calor | hacer | estar;ser | to be hot (weather)
 ___ frío (yo) | tener | hacer;estar | to be cold (person)

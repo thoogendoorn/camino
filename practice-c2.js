@@ -54,7 +54,7 @@ ___ clases de ética | impartir | repartir;dividir | to teach ethics classes
 ___ matrimonio | contraer | coger;tomar | to get married
 ___ una conferencia | pronunciar|dar | decir;hablar | to give a lecture
 ___ críticas | suscitar | soltar;tirar | to provoke criticism
-___ un papel clave | desempeñar | jugar;hacer | to play a key role
+___ un papel clave | desempeñar|jugar | cometer;realizar | to play a key role
 ___ un objetivo | alcanzar|lograr | llegar;tocar | to achieve a goal
 `);
   P('C2', 'colloc', 'Refranes', 'c2-modismos')(`

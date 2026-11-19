@@ -46,10 +46,14 @@
     const x = a.map(t => C.deacc(C.norm(t))), y = b.map(t => C.deacc(C.norm(t)));
     const dp = Array.from({ length: x.length + 1 }, () => Array(y.length + 1).fill(0));
     for (let i = x.length - 1; i >= 0; i--) for (let j = y.length - 1; j >= 0; j--) dp[i][j] = x[i] === y[j] && C.norm(a[i]) === C.norm(b[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-    const keep = new Set(); let i = 0, j = 0;
-    while (i < x.length && j < y.length) { if (x[i] === y[j] && C.norm(a[i]) === C.norm(b[j])) { keep.add(i); i++; j++; } else if (dp[i + 1][j] >= dp[i][j + 1]) i++; else j++; }
+    const keep = new Set(); let i = 0, j = 0, ins = -1;
+    while (i < x.length && j < y.length) { if (x[i] === y[j] && C.norm(a[i]) === C.norm(b[j])) { keep.add(i); i++; j++; } else if (dp[i + 1][j] >= dp[i][j + 1]) i++; else { if (ins < 0) ins = i; j++; } }
+    if (ins < 0 && j < y.length) ins = x.length;
     const bad = a.map((_, k) => k).filter(k => !keep.has(k));
-    return bad.length ? bad : [Math.max(0, a.length - 1)];
+    if (bad.length) return bad;
+    // a word is missing: the words on either side of the gap count as right taps
+    const gap = [ins - 1, ins].filter(k => k >= 0 && k < a.length);
+    return gap.length ? gap : [Math.max(0, a.length - 1)];
   };
   E.renderers.errhunt = (ex, root, done, ctx) => {
     const w = toks(ex.wrong), bad = diffIdx(w, toks(ex.right));

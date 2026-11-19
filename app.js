@@ -653,7 +653,7 @@ grant select, insert, update on public.camino_state to authenticated;`;
   function viewAbout() {
     const nV = C.VOCAB_TOTAL, nD = C.UNITS.reduce((n, u) => n + u.drills.length, 0), nR = C.UNITS.reduce((n, u) => n + u.readings.length, 0), nS = C.UNITS.reduce((n, u) => n + u.sentences.length, 0);
     return `<section class="band about"><h1>How Camino works</h1>
-    <p class="lead">${C.UNITS.length} stages, ${C.DECKS.length} thematic decks, ${C.fmtN(nV)} words with example sentences, ${C.fmtN(nD)} grammar drills, ${nS} key sentences and ${nR} graded texts, from A1 to C2 in Castilian Spanish.</p>
+    <p class="lead">${C.UNITS.length} stages, ${C.DECKS.length} thematic decks, ${C.fmtN(nV)} words with example sentences, ${C.fmtN(nD)} grammar drills, ${nS} key sentences, ${C.fmtN((C.PRACTICE || []).reduce((n, b) => n + (b.rows ? b.rows.length : 0), 0))} Entreno practice items and ${nR} graded texts, from A1 to C2 in Castilian Spanish.</p>
     <h2>The method</h2><ul>
       <li><b>Spaced retrieval.</b> Every word, sentence and grammar gap becomes a card scheduled by FSRS, an open-source algorithm that predicts when you're about to forget. You see each card at roughly 90% recall probability, which gives maximum retention per minute.</li>
       <li><b>Small batches, then recall.</b> New words arrive ten at a time: meet, recognise, match, recall in context, then type from memory.</li>

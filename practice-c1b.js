@@ -164,6 +164,6 @@ ___ una enfermedad | diagnosticar | descubrir;hacer | to diagnose an illness
 ___ al especialista | derivar | pasar;cambiar | to refer to the specialist
 ___ un ensayo clínico | realizar|llevar a cabo | jugar;tener | to carry out a clinical trial
 ___ la dosis recomendada | superar|exceder | subir;crecer | to exceed the recommended dose
-___ una crisis | desencadenar | encender;abrir | to trigger an attack
+___ una crisis | desencadenar | encender;abrir | to trigger a crisis
 `);
 })();

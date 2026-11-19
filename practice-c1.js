@@ -2,7 +2,7 @@
 (function () {
   const P = CAMINO.prac;
 
-  P('C1', 'transform', 'Subjuntivo avanzado')(`
+  P('C1', 'transform', 'Subjuntivo avanzado', 'c1-01')(`
 Por mucho que… | Insistes, pero no iré. | Por mucho que insistas, no iré.
 Por más que… | Lo intentó, pero no lo consiguió. | Por más que lo intentó, no lo consiguió.|Por más que lo intentara, no lo consiguió.
 Pase lo que pase… | No importa lo que pase: te ayudaré. | Pase lo que pase, te ayudaré.
@@ -16,7 +16,7 @@ No es que… | El problema no es el dinero; es el tiempo. | No es que sea el din
 Me molestó que… | No me avisaste. | Me molestó que no me hubieras avisado.|Me molestó que no me avisaras.
 Lo + adjetivo + que | Es muy difícil, no te lo imaginas. | No te imaginas lo difícil que es.
 `);
-  P('C1', 'transform', 'Nominalización y registro formal')(`
+  P('C1', 'transform', 'Nominalización y registro formal', 'c1-03')(`
 Nominaliza | Los precios subieron, y por eso protestaron. | La subida de los precios provocó protestas.|La subida de los precios provocó las protestas.
 Nominaliza | Cuando llegó el ministro, empezó la reunión. | La llegada del ministro dio comienzo a la reunión.|Con la llegada del ministro empezó la reunión.
 Nominaliza | Si se reduce el tráfico, mejorará el aire. | La reducción del tráfico mejorará el aire.|La reducción del tráfico mejorará la calidad del aire.
@@ -26,7 +26,7 @@ Formal | No podemos hacer nada. | No es posible hacer nada.|No nos es posible ha
 Formal | Le pedimos que conteste pronto. | Le rogamos que conteste a la mayor brevedad.|Le rogamos que responda a la mayor brevedad.|Le rogamos que conteste lo antes posible.
 Formal | Queremos decirle que su pedido ha llegado. | Le comunicamos que su pedido ha llegado.|Nos complace comunicarle que su pedido ha llegado.
 `);
-  P('C1', 'transform', 'Conectores de nivel avanzado')(`
+  P('C1', 'transform', 'Conectores de nivel avanzado', 'c1-05')(`
 Si bien… | Es cierto que es caro, pero merece la pena. | Si bien es caro, merece la pena.
 Pese a que… | Aunque llovía, se celebró el partido. | Pese a que llovía, se celebró el partido.
 Dado que… | Como no hay quórum, se aplaza la votación. | Dado que no hay quórum, se aplaza la votación.
@@ -36,7 +36,7 @@ Así pues… | No hay presupuesto, así que no podemos contratar a nadie. | No h
 No obstante… | El plan es bueno, pero tiene riesgos. | El plan es bueno. No obstante, tiene riesgos.
 A medida que… | Cuanto más avanzaba el día, más calor hacía. | A medida que avanzaba el día, hacía más calor.
 `);
-  P('C1', 'errors', 'Subjuntivo avanzado')(`
+  P('C1', 'errors', 'Subjuntivo avanzado', 'c1-01')(`
 Por mucho que insistes, no cambiaré de opinión. | Por mucho que insistas, no cambiaré de opinión. | Por mucho que + subjunctive.
 Pase lo que pasa, te apoyaré. | Pase lo que pase, te apoyaré. | Reduplicated subjunctive: pase lo que pase.
 Me molesta que no me lo dices. | Me molesta que no me lo digas. | Emotion + que: subjunctive.
@@ -66,7 +66,7 @@ Pienso de que tienes razón. | Pienso que tienes razón. | Dequeísmo: pensar qu
 Estoy seguro que vendrá. | Estoy seguro de que vendrá. | Queísmo: seguro de que.
 Me di cuenta que era tarde. | Me di cuenta de que era tarde. | Darse cuenta de que.
 `);
-  P('C1', 'contrast', 'Matices del subjuntivo')(`
+  P('C1', 'contrast', 'Matices del subjuntivo', 'c1-01')(`
 Aunque [es/sea] tu amigo, no deberías defenderlo. Ya sé que lo es. | es | Aunque + known fact: indicative.
 Aunque [es/sea] tu amigo, no deberías defenderlo, sea o no tu amigo. | sea | Aunque + concession regardless: subjunctive.
 Como [llegas/llegues] tarde otra vez, te quedas sin cena. | llegues | Como + warning (= si): subjunctive.
@@ -94,7 +94,7 @@ ___ un recurso (judicial) | interponer|presentar | dar;hacer | to lodge an appea
 ___ medidas | adoptar|tomar | hacer;poner | to adopt measures
 ___ una decisión | adoptar|tomar | hacer;dar | to adopt a decision
 ___ responsabilidades | exigir|asumir | dar;hacer | to demand / accept accountability
-___ un plazo | fijar|ampliar | hacer;dar | to set / extend a deadline
+___ un plazo | fijar|ampliar | hacer;cometer | to set / extend a deadline
 ___ un contrato | rescindir|firmar | romper;quitar | to terminate a contract
 ___ un acuerdo | alcanzar|suscribir | hacer;coger | to reach an agreement
 ___ una crisis | atravesar|superar | pasar;hacer | to go through a crisis

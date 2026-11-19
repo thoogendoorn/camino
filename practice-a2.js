@@ -2,7 +2,7 @@
 (function () {
   const P = CAMINO.prac;
 
-  P('A2', 'transform', 'Pretérito perfecto')(`
+  P('A2', 'transform', 'Pretérito perfecto', 'a2-perfecto')(`
 Hoy… | Ayer comí paella. | Hoy he comido paella.
 Esta semana… | La semana pasada fui al cine. | Esta semana he ido al cine.
 Hoy… | Ayer vimos una película. | Hoy hemos visto una película.
@@ -12,9 +12,9 @@ Esta mañana… | Ayer por la mañana escribí tres correos. | Esta mañana he e
 Ya… | Todavía no he terminado el libro. | Ya he terminado el libro.
 Todavía no… | Ya hemos comprado los billetes. | Todavía no hemos comprado los billetes.
 Nunca… | He estado en Sevilla muchas veces. | Nunca he estado en Sevilla.
-Pregunta (vosotros) | Habéis abierto la tienda. | ¿Habéis abierto la tienda?
+Ustedes (pregunta) | Habéis abierto la tienda. | ¿Han abierto la tienda?|¿Han abierto ustedes la tienda?|¿Ustedes han abierto la tienda?
 `);
-  P('A2', 'transform', 'Pretérito indefinido')(`
+  P('A2', 'transform', 'Pretérito indefinido', 'a2-historias')(`
 Ayer… | Hoy he trabajado mucho. | Ayer trabajé mucho.
 El sábado pasado… | Este sábado hemos ido a la playa. | El sábado pasado fuimos a la playa.
 En 2019… | Este año ella ha tenido un hijo. | En 2019 ella tuvo un hijo.
@@ -28,7 +28,7 @@ Hace dos años… | Este año he puesto un negocio. | Hace dos años puse un neg
 Ayer… | Hoy Ana se ha levantado tarde. | Ayer Ana se levantó tarde.
 Ayer… | Hoy los niños han leído un cuento. | Ayer los niños leyeron un cuento.
 `);
-  P('A2', 'transform', 'Pretérito imperfecto')(`
+  P('A2', 'transform', 'Pretérito imperfecto', 'a2-imperfecto')(`
 Cuando era pequeño… | Ahora vivo en Madrid. | Cuando era pequeño vivía en Madrid.
 Antes… | Ahora no como carne. | Antes comía carne.
 De niña… | Ahora no veo la tele. | De niña veía la tele.
@@ -36,7 +36,7 @@ Antes… | Ahora vamos al trabajo en coche. | Antes íbamos al trabajo en coche.
 Antes… | Ahora soy muy tranquilo. | Antes era muy tranquilo.
 En los años 80… (no) | Ahora la gente tiene móvil. | En los años 80 la gente no tenía móvil.
 `);
-  P('A2', 'transform', 'Pronombres de objeto directo')(`
+  P('A2', 'transform', 'Pronombres de objeto directo', 'a2-compras')(`
 Usa un pronombre | Compro el pan. | Lo compro.
 Usa un pronombre | Llamo a mi madre. | La llamo.
 Usa un pronombre | Vemos las películas en versión original. | Las vemos en versión original.
@@ -46,13 +46,13 @@ Usa un pronombre | Estoy leyendo el periódico. | Estoy leyéndolo.|Lo estoy ley
 Usa un pronombre | ¿Tienes las llaves? | ¿Las tienes?
 Usa un pronombre | He visto a Marta. | La he visto.
 `);
-  P('A2', 'transform', 'Ir a + infinitivo')(`
+  P('A2', 'transform', 'Ir a + infinitivo', 'a2-planes')(`
 Mañana… (ir a) | Hoy estudio. | Mañana voy a estudiar.
 El fin de semana… (ir a) | Hoy no salgo. | El fin de semana no voy a salir.
 El año que viene… (ir a) | Este año vivimos en Lisboa. | El año que viene vamos a vivir en Lisboa.
 Esta noche… (ir a) | Ahora ceno en casa. | Esta noche voy a cenar en casa.
 `);
-  P('A2', 'errors', 'Pretérito perfecto o indefinido')(`
+  P('A2', 'errors', 'Pretérito perfecto o indefinido', 'a2-indefinido')(`
 Ayer he ido al médico. | Ayer fui al médico. | Ayer is a finished time: indefinido.
 Esta mañana desayuné con mi hermana y ahora estoy en clase. | Esta mañana he desayunado con mi hermana y ahora estoy en clase. | In Spain, today's events usually take the pretérito perfecto.
 En 2015 he vivido en Berlín. | En 2015 viví en Berlín. | A specific past year: indefinido.
@@ -60,7 +60,7 @@ En 2015 he vivido en Berlín. | En 2015 viví en Berlín. | A specific past year
 Hace tres años he empezado a estudiar. | Hace tres años empecé a estudiar. | Hace + time: indefinido.
 Ellos han llegado anoche. | Ellos llegaron anoche. | Anoche is finished: indefinido.
 `);
-  P('A2', 'errors', 'Pretérito indefinido')(`
+  P('A2', 'errors', 'Pretérito indefinido', 'a2-historias')(`
 Ayer yo hací la cena. | Ayer yo hice la cena. | Hacer is irregular: hice.
 Ella estó en casa todo el día. | Ella estuvo en casa todo el día. | Estar: estuve, estuvo.
 Nosotros fuemos al concierto. | Nosotros fuimos al concierto. | Ir/ser: fuimos.
@@ -71,27 +71,27 @@ Yo llegé tarde. | Yo llegué tarde. | g becomes gu before e.
 Él durmió poco y yo dormí menos. Los niños dormieron mucho. | Él durmió poco y yo dormí menos. Los niños durmieron mucho. | Dormir: durmieron.
 Ayer ella pidió una pizza y yo pedí una ensalada; ellos pedieron pasta. | Ayer ella pidió una pizza y yo pedí una ensalada; ellos pidieron pasta. | Pedir: pidieron.
 `);
-  P('A2', 'errors', 'Pretérito imperfecto')(`
+  P('A2', 'errors', 'Pretérito imperfecto', 'a2-imperfecto')(`
 Cuando era niño, iba a la playa y jugé con mi hermano. | Cuando era niño, iba a la playa y jugaba con mi hermano. | Habits in the past: imperfecto.
 Antes nosotros íbamos al cine y vimos dos películas cada semana. | Antes nosotros íbamos al cine y veíamos dos películas cada semana. | Repeated past action: imperfecto.
 Mi abuela fue muy simpática y siempre nos contaba historias. | Mi abuela era muy simpática y siempre nos contaba historias. | Description in the past: imperfecto.
 Cuando tuve diez años, vivía en Sevilla. | Cuando tenía diez años, vivía en Sevilla. | Age in the past: imperfecto.
 `);
-  P('A2', 'errors', 'Pronombres')(`
+  P('A2', 'errors', 'Pronombres', 'a2-intereses')(`
 A mí me gusta, y a él gusta también. | A mí me gusta, y a él le gusta también. | Gustar always needs le with él.
 El libro lo tengo y la leo cada noche. | El libro lo tengo y lo leo cada noche. | Libro is masculine: lo.
 ¿Las flores? Ya los he comprado. | ¿Las flores? Ya las he comprado. | Flores is feminine plural: las.
 Este regalo es para tú. | Este regalo es para ti. | After para: ti.
 ¿Vienes con mí? | ¿Vienes conmigo? | Con + mí = conmigo.
 `);
-  P('A2', 'errors', 'Comparativos')(`
+  P('A2', 'errors', 'Comparativos', 'a2-ropa')(`
 Madrid es más grande que Toledo, pero Toledo es más bonito que Madrid y más antiguo de Madrid. | Madrid es más grande que Toledo, pero Toledo es más bonito que Madrid y más antiguo que Madrid. | Comparisons use más… que.
 Mi hermano es más bueno que yo jugando al tenis. | Mi hermano es mejor que yo jugando al tenis. | Más bueno → mejor.
 Esta película es tan aburrida que la otra. | Esta película es tan aburrida como la otra. | Tan… como.
 Tengo tanto amigos como tú. | Tengo tantos amigos como tú. | Tanto agrees with the noun.
 Es el restaurante más caro de la ciudad y más malo. | Es el restaurante más caro de la ciudad y el peor. | Más malo → peor.
 `);
-  P('A2', 'contrast', 'Pretérito perfecto o indefinido')(`
+  P('A2', 'contrast', 'Pretérito perfecto o indefinido', 'a2-indefinido')(`
 Esta mañana [he desayunado/desayuné] muy poco. | he desayunado | Today, in Spain: pretérito perfecto.
 El verano pasado [hemos estado/estuvimos] en Grecia. | estuvimos | Finished period: indefinido.
 ¿[Has visto/Viste] alguna vez una corrida? | Has visto | Life experience up to now: perfecto.
@@ -99,7 +99,7 @@ En 1992 [se han celebrado/se celebraron] los Juegos Olímpicos en Barcelona. | s
 Todavía no [he terminado/terminé] el informe. | he terminado | Todavía no links to now: perfecto.
 Anoche [hemos cenado/cenamos] en un restaurante chino. | cenamos | Anoche is finished: indefinido.
 `);
-  P('A2', 'contrast', 'Indefinido o imperfecto')(`
+  P('A2', 'contrast', 'Indefinido o imperfecto', 'a2-laboral')(`
 Cuando [era/fue] pequeña, vivía en un pueblo. | era | Background, age, description: imperfecto.
 Ayer [llovía/llovió] todo el día. | llovió | A closed period (todo el día): indefinido.
 [Eran/Fueron] las ocho cuando llegué. | Eran | Time as background: imperfecto.
@@ -107,7 +107,7 @@ De niño [jugaba/jugué] al fútbol todos los días. | jugaba | Habit: imperfect
 Un día [conocía/conocí] a mi mejor amigo en el parque. | conocí | A single event: indefinido.
 Mientras [cocinaba/cociné], sonó el teléfono. | cocinaba | Action in progress interrupted: imperfecto.
 `);
-  P('A2', 'contrast', 'Por o para')(`
+  P('A2', 'contrast', 'Por o para', 'a2-viajar')(`
 Este regalo es [por/para] ti. | para | Recipient: para.
 Gracias [por/para] la ayuda. | por | Gracias por.
 Estudio español [por/para] vivir en España. | para | Purpose: para.
@@ -115,14 +115,14 @@ Paseamos [por/para] el parque. | por | Movement through: por.
 Te llamo [por/para] la tarde. | por | Part of the day: por la tarde.
 Tengo que terminarlo [por/para] el lunes. | para | Deadline: para.
 `);
-  P('A2', 'contrast', 'Saber o conocer')(`
+  P('A2', 'contrast', 'Saber o conocer', 'a2-piso')(`
 ¿[Sabes/Conoces] a mi hermana? | Conoces | People: conocer.
 No [sé/conozco] nadar. | sé | Ability: saber + infinitive.
 ¿[Sabes/Conoces] dónde está la estación? | Sabes | Information: saber.
 [Sé/Conozco] muy bien Barcelona. | Conozco | Places: conocer.
 No [sé/conozco] su número de teléfono. | sé | Facts and data: saber.
 `);
-  P('A2', 'contrast', 'Pedir o preguntar')(`
+  P('A2', 'contrast', 'Pedir o preguntar', 'a2-restaurante')(`
 Voy a [pedir/preguntar] un café. | pedir | To order or request something: pedir.
 Le voy a [pedir/preguntar] la hora. | preguntar | To ask for information: preguntar.
 Mi hijo siempre me [pide/pregunta] dinero. | pide | Asking for a thing: pedir.
